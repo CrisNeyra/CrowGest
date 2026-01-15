@@ -4,17 +4,16 @@ node_modules/
 # Build output
 dist/
 
-# Environment files
+# Environment variables
 .env
 .env.local
 .env.*.local
 
-# Editor directories
-.vscode/*
-!.vscode/extensions.json
+# IDE
+.vscode/
 .idea/
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
@@ -24,4 +23,3 @@ npm-debug.log*
 
 # Cache
 .cache/
-node_modules

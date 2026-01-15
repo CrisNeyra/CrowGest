@@ -185,6 +185,7 @@ body {
 /* Efecto glass para modales */
 .glass {
   background: rgba(24, 24, 27, 0.8);
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(63, 63, 70, 0.3);
 }

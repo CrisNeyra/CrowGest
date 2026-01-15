@@ -46,13 +46,13 @@ export default function CrowBackground() {
       />
 
       {/* Partículas flotantes */}
-      {[...Array(6)].map((_, i) => (
+      {[...Array(8)].map((_, i) => (
         <motion.div
           key={i}
           className="absolute w-1 h-1 bg-white/20 rounded-full"
           style={{
-            left: `${20 + i * 15}%`,
-            top: `${30 + (i % 3) * 20}%`
+            left: `${15 + i * 10}%`,
+            top: `${20 + (i % 4) * 18}%`
           }}
           animate={{
             y: [0, -30, 0],
