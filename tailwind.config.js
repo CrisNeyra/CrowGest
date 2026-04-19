@@ -1,11 +1,22 @@
 ﻿/** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
+        /** Modo claro: fondos y cromado en azules muy suaves */
+        'base-light': '#e8eef8',
+        'sidebar-light': '#dae8f6',
+        'edge-light': '#dae8f6',
+        /** Texto y superficies con tinte azul (contraste sobre base-light) */
+        pastel: {
+          ink: '#0c2742',
+          muted: '#3a5370',
+          mist: '#eef3fb',
+        },
         crow: {
-          50: '#f5f5f6',
+          50: '#f0edeb',
           100: '#e5e5e7',
           200: '#d1d1d4',
           300: '#a1a1aa',

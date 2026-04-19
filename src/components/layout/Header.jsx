@@ -1,12 +1,10 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Bell, User, LogOut, Settings, DollarSign, RefreshCw } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Bell, Moon, Search, Sun, User } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function Header({ title, subtitle }) {
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [dolar, setDolar] = useState({ blue: { venta: 1220 }, oficial: { venta: 1090 } });
-  const [loadingDolar, setLoadingDolar] = useState(false);
+  const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
     const fetchDolar = async () => {
@@ -26,134 +24,67 @@ export default function Header({ title, subtitle }) {
     return () => clearInterval(interval);
   }, []);
 
-  const notifications = [
-    { id: 1, title: 'Stock bajo', message: 'Mouse Logitech tiene stock bajo', type: 'warning' },
-    { id: 2, title: 'Factura vencida', message: 'Factura F-000001 está vencida', type: 'danger' },
-    { id: 3, title: 'Nueva venta', message: 'Se registró una nueva venta', type: 'success' },
-  ];
-
   return (
-    <header className="h-16 bg-zinc-900/50 backdrop-blur-xl border-b border-zinc-800 flex items-center justify-between px-6 sticky top-0 z-40">
-      {/* Title */}
+    <header
+      className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-edge-light bg-sidebar-light/95 px-6 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95"
+    >
       <div>
-        <h1 className="text-xl font-semibold text-white">{title}</h1>
-        {subtitle && <p className="text-sm text-zinc-500">{subtitle}</p>}
+        <h1 className="text-lg font-semibold text-pastel-ink dark:text-slate-100">{title}</h1>
+        {subtitle && <p className="text-sm text-pastel-muted dark:text-slate-400">{subtitle}</p>}
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-4">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+      <div className="flex items-center gap-3">
+        <div className="relative hidden md:block">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-pastel-muted dark:text-slate-500" size={18} />
           <input
             type="text"
-            placeholder="Buscar..."
-            className="w-64 bg-zinc-800 border border-zinc-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors"
+            placeholder="Buscar clientes, ventas o facturas..."
+            className="w-80 rounded-xl border border-edge-light bg-white/65 py-2 pl-10 pr-4 text-sm text-pastel-ink placeholder:text-pastel-muted focus:border-sky-500 focus:bg-white/85 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
           />
         </div>
 
-        {/* Cotización Dólar - Compacto */}
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800/80 border border-zinc-700 rounded-lg">
-          <DollarSign size={14} className="text-emerald-400" />
-          <div className="flex items-center gap-3 text-xs">
-            <div>
-              <span className="text-zinc-500">Blue </span>
-              <span className="text-emerald-400 font-bold">${dolar.blue?.venta?.toLocaleString('es-AR')}</span>
-            </div>
-            <div className="w-px h-4 bg-zinc-700" />
-            <div>
-              <span className="text-zinc-500">Oficial </span>
-              <span className="text-blue-400 font-bold">${dolar.oficial?.venta?.toLocaleString('es-AR')}</span>
-            </div>
+        <div className="hidden items-center gap-3 rounded-xl border border-edge-light bg-white/65 px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-800 lg:flex">
+          <div className="flex items-center gap-1.5">
+            <span className="font-medium text-pastel-muted dark:text-slate-400">Blue</span>
+            <span className="font-semibold text-pastel-ink dark:text-slate-100">
+              ${dolar.blue?.venta?.toLocaleString('es-AR')}
+            </span>
+          </div>
+          <div className="h-4 w-px bg-edge-light/80 dark:bg-slate-700" />
+          <div className="flex items-center gap-1.5">
+            <span className="font-medium text-pastel-muted dark:text-slate-400">Oficial</span>
+            <span className="font-semibold text-pastel-ink dark:text-slate-100">
+              ${dolar.oficial?.venta?.toLocaleString('es-AR')}
+            </span>
           </div>
         </div>
 
-        {/* Notifications */}
-        <div className="relative">
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-          >
-            <Bell size={20} />
-            {notifications.length > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-            )}
-          </button>
+        <button
+          onClick={toggleTheme}
+          className="rounded-xl border border-edge-light bg-white/70 p-2 text-pastel-ink transition hover:bg-white/90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          aria-label="Cambiar tema"
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
 
-          {showNotifications && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute right-0 top-full mt-2 w-80 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl overflow-hidden"
-            >
-              <div className="p-4 border-b border-zinc-800">
-                <h3 className="font-semibold text-white">Notificaciones</h3>
-              </div>
-              <div className="max-h-80 overflow-y-auto">
-                {notifications.map((notif) => (
-                  <div
-                    key={notif.id}
-                    className="p-4 border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`w-2 h-2 mt-2 rounded-full ${
-                          notif.type === 'warning'
-                            ? 'bg-amber-500'
-                            : notif.type === 'danger'
-                            ? 'bg-red-500'
-                            : 'bg-emerald-500'
-                        }`}
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-white">{notif.title}</p>
-                        <p className="text-xs text-zinc-500 mt-1">{notif.message}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="p-3 bg-zinc-800/50">
-                <button className="w-full text-center text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
-                  Ver todas las notificaciones
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </div>
+        <button
+          className="relative rounded-xl border border-edge-light bg-white/70 p-2 text-pastel-ink transition hover:bg-white/90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+        >
+          <Bell size={19} />
+          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
+        </button>
 
-        {/* User Menu */}
-        <div className="relative">
-          <button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors"
-          >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-              <User size={16} className="text-white" />
-            </div>
-            <div className="text-left hidden md:block">
-              <p className="text-sm font-medium text-white">Admin</p>
-              <p className="text-xs text-zinc-500">Administrador</p>
-            </div>
-          </button>
-
-          {showUserMenu && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute right-0 top-full mt-2 w-48 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl overflow-hidden"
-            >
-              <button className="w-full flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">
-                <Settings size={18} />
-                <span className="text-sm">Configuración</span>
-              </button>
-              <button className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-zinc-800 transition-colors">
-                <LogOut size={18} />
-                <span className="text-sm">Cerrar sesión</span>
-              </button>
-            </motion.div>
-          )}
-        </div>
+        <button
+          className="flex items-center gap-3 rounded-xl border border-edge-light bg-white/70 px-2.5 py-1.5 transition hover:bg-white/90 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-600 text-white dark:bg-indigo-600">
+            <User size={16} />
+          </div>
+          <div className="hidden text-left md:block">
+            <p className="text-sm font-semibold text-pastel-ink dark:text-slate-100">Admin</p>
+            <p className="text-xs text-pastel-muted dark:text-slate-400">Administrador</p>
+          </div>
+        </button>
       </div>
     </header>
   );

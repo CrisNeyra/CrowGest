@@ -38,7 +38,7 @@ export default function Movimientos() {
     .reduce((total, m) => total + m.monto, 0);
 
   return (
-    <Layout moduleClass="bg-gradient-to-br from-teal-950 via-zinc-900 to-teal-950">
+    <Layout>
       <Header title="Movimientos" subtitle="Historial de todas las operaciones" />
 
       <div className="p-6">
