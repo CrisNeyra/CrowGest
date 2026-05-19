@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Edit, Trash2, Package, AlertTriangle, X, Filter } from 'lucide-react';
+import { toast } from 'sonner';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
@@ -31,7 +32,7 @@ export default function Productos() {
     return matchSearch && matchCategoria;
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const productoData = {
       ...formData,
@@ -41,23 +42,30 @@ export default function Productos() {
       stockMinimo: parseInt(formData.stockMinimo)
     };
 
-    if (editingProducto) {
-      updateProducto(editingProducto.id, productoData);
-    } else {
-      addProducto(productoData);
+    try {
+      if (editingProducto) {
+        await updateProducto(editingProducto.id, productoData);
+        toast.success('Producto actualizado correctamente');
+      } else {
+        await addProducto(productoData);
+        toast.success('Producto creado correctamente');
+      }
+      setShowModal(false);
+      setEditingProducto(null);
+      setFormData({
+        codigo: '',
+        nombre: '',
+        descripcion: '',
+        precio: '',
+        costo: '',
+        stock: '',
+        stockMinimo: '',
+        categoria: ''
+      });
+    } catch (error) {
+      console.error(error);
+      toast.error('Hubo un error al guardar el producto');
     }
-    setShowModal(false);
-    setEditingProducto(null);
-    setFormData({
-      codigo: '',
-      nombre: '',
-      descripcion: '',
-      precio: '',
-      costo: '',
-      stock: '',
-      stockMinimo: '',
-      categoria: ''
-    });
   };
 
   const handleEdit = (producto) => {
@@ -75,9 +83,15 @@ export default function Productos() {
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (confirm('¿Estás seguro de eliminar este producto?')) {
-      deleteProducto(id);
+      try {
+        await deleteProducto(id);
+        toast.success('Producto eliminado');
+      } catch (error) {
+        console.error(error);
+        toast.error('Hubo un error al eliminar el producto');
+      }
     }
   };
 

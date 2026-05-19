@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Save, RefreshCw, Database, Palette, Bell, Shield, UploadCloud } from 'lucide-react';
+import { toast } from 'sonner';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
@@ -19,7 +20,7 @@ export default function Configuracion() {
 
   const handleSave = () => {
     localStorage.setItem('crowgest_settings', JSON.stringify(settings));
-    alert('Configuración guardada correctamente');
+    toast.success('Configuración guardada correctamente');
   };
 
   const handleResetData = () => {
@@ -185,10 +186,10 @@ export default function Configuracion() {
                           setIsMigrating(true);
                           try {
                             await migrateToFirebase();
-                            alert('¡Datos migrados exitosamente a la nube!');
+                            toast.success('¡Datos migrados exitosamente a la nube!');
                           } catch (error) {
                             console.error(error);
-                            alert('Hubo un error al migrar los datos.');
+                            toast.error('Hubo un error al migrar los datos.');
                           } finally {
                             setIsMigrating(false);
                           }

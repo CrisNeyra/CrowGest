@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, FileText, Eye, CreditCard, X } from 'lucide-react';
+import { Plus, Search, FileText, Eye, CreditCard, X, Download } from 'lucide-react';
+import { toast } from 'sonner';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
@@ -27,40 +31,96 @@ export default function Facturas() {
     return matchSearch && matchEstado;
   }).reverse();
 
-  const handleCrearFactura = () => {
+  const handleCrearFactura = async () => {
     if (!selectedVenta) return;
     
     const venta = ventas.find(v => v.id === selectedVenta);
     if (!venta) return;
 
-    addFactura({
-      ventaId: venta.id,
-      clienteId: venta.clienteId,
-      items: venta.items,
-      total: venta.total
-    });
-
-    setShowModal(false);
-    setSelectedVenta('');
+    try {
+      await addFactura({
+        ventaId: venta.id,
+        clienteId: venta.clienteId,
+        items: venta.items,
+        total: venta.total
+      });
+      toast.success('Factura creada correctamente');
+      setShowModal(false);
+      setSelectedVenta('');
+    } catch (error) {
+      console.error(error);
+      toast.error('Hubo un error al crear la factura');
+    }
   };
 
-  const handlePago = () => {
+  const handlePago = async () => {
     if (!selectedFactura || !pagoMonto) return;
     
     const monto = parseFloat(pagoMonto);
     if (monto <= 0 || monto > selectedFactura.saldoPendiente) return;
 
-    addPago({
-      tipo: 'cliente',
-      facturaId: selectedFactura.id,
-      clienteId: selectedFactura.clienteId,
-      monto: monto,
-      metodoPago: 'efectivo'
+    try {
+      await addPago({
+        tipo: 'cliente',
+        facturaId: selectedFactura.id,
+        clienteId: selectedFactura.clienteId,
+        monto: monto,
+        metodoPago: 'efectivo'
+      });
+      toast.success('Pago registrado correctamente');
+      setShowPagoModal(false);
+      setSelectedFactura(null);
+      setPagoMonto('');
+    } catch (error) {
+      console.error(error);
+      toast.error('Hubo un error al registrar el pago');
+    }
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text('Reporte de Facturas - CrowGest', 14, 15);
+    
+    const tableData = filteredFacturas.map(factura => {
+      const cliente = clientes.find(c => c.id === factura.clienteId);
+      return [
+        factura.numero,
+        cliente?.nombre || 'Desconocido',
+        new Date(factura.fecha).toLocaleDateString(),
+        `$${factura.total.toLocaleString()}`,
+        `$${factura.saldoPendiente.toLocaleString()}`,
+        factura.estado
+      ];
     });
 
-    setShowPagoModal(false);
-    setSelectedFactura(null);
-    setPagoMonto('');
+    doc.autoTable({
+      head: [['Número', 'Cliente', 'Fecha', 'Total', 'Saldo Pendiente', 'Estado']],
+      body: tableData,
+      startY: 25,
+    });
+
+    doc.save('facturas_crowgest.pdf');
+    toast.success('PDF exportado correctamente');
+  };
+
+  const exportToExcel = () => {
+    const dataToExport = filteredFacturas.map(factura => {
+      const cliente = clientes.find(c => c.id === factura.clienteId);
+      return {
+        Número: factura.numero,
+        Cliente: cliente?.nombre || 'Desconocido',
+        Fecha: new Date(factura.fecha).toLocaleDateString(),
+        Total: factura.total,
+        'Saldo Pendiente': factura.saldoPendiente,
+        Estado: factura.estado
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Facturas");
+    XLSX.writeFile(wb, "facturas_crowgest.xlsx");
+    toast.success('Excel exportado correctamente');
   };
 
   return (
@@ -92,14 +152,30 @@ export default function Facturas() {
               <option value="pagada">Pagada</option>
             </select>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            disabled={ventasSinFactura.length === 0}
-            className="btn-warning disabled:opacity-50"
-          >
-            <Plus size={20} />
-            Nueva Factura
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={exportToPDF}
+              className="flex items-center gap-2 rounded-xl border border-edge-light bg-white/70 px-4 py-2 text-sm font-medium text-pastel-ink transition hover:bg-white/90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            >
+              <FileText size={18} className="text-red-500" />
+              PDF
+            </button>
+            <button
+              onClick={exportToExcel}
+              className="flex items-center gap-2 rounded-xl border border-edge-light bg-white/70 px-4 py-2 text-sm font-medium text-pastel-ink transition hover:bg-white/90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            >
+              <Download size={18} className="text-emerald-500" />
+              Excel
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              disabled={ventasSinFactura.length === 0}
+              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-400 disabled:opacity-50"
+            >
+              <Plus size={18} />
+              Nueva Factura
+            </button>
+          </div>
         </div>
 
         {/* Invoices Table */}

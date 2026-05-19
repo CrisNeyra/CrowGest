@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Edit, Trash2, Mail, Phone, MapPin, X } from 'lucide-react';
+import { toast } from 'sonner';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
@@ -22,16 +23,23 @@ export default function Clientes() {
     cliente.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingCliente) {
-      updateCliente(editingCliente.id, formData);
-    } else {
-      addCliente(formData);
+    try {
+      if (editingCliente) {
+        await updateCliente(editingCliente.id, formData);
+        toast.success('Cliente actualizado correctamente');
+      } else {
+        await addCliente(formData);
+        toast.success('Cliente creado correctamente');
+      }
+      setShowModal(false);
+      setEditingCliente(null);
+      setFormData({ nombre: '', email: '', telefono: '', direccion: '' });
+    } catch (error) {
+      console.error(error);
+      toast.error('Hubo un error al guardar el cliente');
     }
-    setShowModal(false);
-    setEditingCliente(null);
-    setFormData({ nombre: '', email: '', telefono: '', direccion: '' });
   };
 
   const handleEdit = (cliente) => {
@@ -45,9 +53,15 @@ export default function Clientes() {
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (confirm('¿Estás seguro de eliminar este cliente?')) {
-      deleteCliente(id);
+      try {
+        await deleteCliente(id);
+        toast.success('Cliente eliminado');
+      } catch (error) {
+        console.error(error);
+        toast.error('Hubo un error al eliminar el cliente');
+      }
     }
   };
 

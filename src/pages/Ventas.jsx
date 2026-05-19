@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, ShoppingCart, Trash2, X, Minus } from 'lucide-react';
+import { Plus, Search, ShoppingCart, Trash2, X, Minus, FileText, Download } from 'lucide-react';
+import { toast } from 'sonner';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
@@ -67,24 +71,75 @@ export default function Ventas() {
     return carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedCliente || carrito.length === 0) return;
 
-    addVenta({
-      clienteId: selectedCliente,
-      items: carrito.map(item => ({
-        productoId: item.productoId,
-        cantidad: item.cantidad,
-        precioUnitario: item.precio,
-        subtotal: item.precio * item.cantidad
-      })),
-      total: calcularTotal()
+    try {
+      await addVenta({
+        clienteId: selectedCliente,
+        items: carrito.map(item => ({
+          productoId: item.productoId,
+          cantidad: item.cantidad,
+          precioUnitario: item.precio,
+          subtotal: item.precio * item.cantidad
+        })),
+        total: calcularTotal()
+      });
+      toast.success('Venta registrada correctamente');
+      setShowModal(false);
+      setSelectedCliente('');
+      setCarrito([]);
+      setProductoSearch('');
+    } catch (error) {
+      console.error(error);
+      toast.error('Hubo un error al registrar la venta');
+    }
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text('Reporte de Ventas - CrowGest', 14, 15);
+    
+    const tableData = filteredVentas.map(venta => {
+      const cliente = clientes.find(c => c.id === venta.clienteId);
+      return [
+        venta.numero,
+        cliente?.nombre || 'Desconocido',
+        new Date(venta.fecha).toLocaleDateString(),
+        venta.items.length.toString(),
+        `$${venta.total.toLocaleString()}`,
+        venta.estado
+      ];
     });
 
-    setShowModal(false);
-    setSelectedCliente('');
-    setCarrito([]);
-    setProductoSearch('');
+    doc.autoTable({
+      head: [['Número', 'Cliente', 'Fecha', 'Items', 'Total', 'Estado']],
+      body: tableData,
+      startY: 25,
+    });
+
+    doc.save('ventas_crowgest.pdf');
+    toast.success('PDF exportado correctamente');
+  };
+
+  const exportToExcel = () => {
+    const dataToExport = filteredVentas.map(venta => {
+      const cliente = clientes.find(c => c.id === venta.clienteId);
+      return {
+        Número: venta.numero,
+        Cliente: cliente?.nombre || 'Desconocido',
+        Fecha: new Date(venta.fecha).toLocaleDateString(),
+        Items: venta.items.length,
+        Total: venta.total,
+        Estado: venta.estado
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+    XLSX.writeFile(wb, "ventas_crowgest.xlsx");
+    toast.success('Excel exportado correctamente');
   };
 
   return (
@@ -104,13 +159,29 @@ export default function Ventas() {
               className="input-field pl-10"
             />
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="btn-primary"
-          >
-            <Plus size={20} />
-            Nueva Venta
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={exportToPDF}
+              className="flex items-center gap-2 rounded-xl border border-edge-light bg-white/70 px-4 py-2 text-sm font-medium text-pastel-ink transition hover:bg-white/90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            >
+              <FileText size={18} className="text-red-500" />
+              PDF
+            </button>
+            <button
+              onClick={exportToExcel}
+              className="flex items-center gap-2 rounded-xl border border-edge-light bg-white/70 px-4 py-2 text-sm font-medium text-pastel-ink transition hover:bg-white/90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            >
+              <Download size={18} className="text-emerald-500" />
+              Excel
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-500 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+            >
+              <Plus size={18} />
+              Nueva Venta
+            </button>
+          </div>
         </div>
 
         {/* Sales Table */}

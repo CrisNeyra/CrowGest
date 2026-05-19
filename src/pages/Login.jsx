@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { toast } from 'sonner';
 import { auth } from '../firebase';
 import { useTheme } from '../context/ThemeContext';
 
@@ -19,9 +20,11 @@ export default function Login() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      toast.success('Sesión iniciada correctamente');
       // Redirección manejada por AppRoutes
     } catch (err) {
       console.error(err);
+      toast.error('Correo o contraseña incorrectos.');
       setError('Correo o contraseña incorrectos.');
     } finally {
       setLoading(false);

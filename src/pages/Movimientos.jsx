@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, ArrowLeftRight, TrendingUp, TrendingDown, Filter } from 'lucide-react';
+import { Search, ArrowLeftRight, TrendingUp, TrendingDown, Filter, FileText, Download } from 'lucide-react';
+import { toast } from 'sonner';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
@@ -36,6 +40,48 @@ export default function Movimientos() {
   const totalEgresos = movimientos
     .filter(m => m.tipo === 'pago_proveedor')
     .reduce((total, m) => total + m.monto, 0);
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text('Reporte de Movimientos - CrowGest', 14, 15);
+    
+    const tableData = filteredMovimientos.map(mov => {
+      const esIngreso = mov.tipo === 'venta' || mov.tipo === 'cobro';
+      return [
+        new Date(mov.fecha).toLocaleDateString(),
+        mov.descripcion,
+        getTipoInfo(mov.tipo).label,
+        `${esIngreso ? '+' : '-'}$${mov.monto.toLocaleString()}`
+      ];
+    });
+
+    doc.autoTable({
+      head: [['Fecha', 'Descripción', 'Tipo', 'Monto']],
+      body: tableData,
+      startY: 25,
+    });
+
+    doc.save('movimientos_crowgest.pdf');
+    toast.success('PDF exportado correctamente');
+  };
+
+  const exportToExcel = () => {
+    const dataToExport = filteredMovimientos.map(mov => {
+      const esIngreso = mov.tipo === 'venta' || mov.tipo === 'cobro';
+      return {
+        Fecha: new Date(mov.fecha).toLocaleDateString(),
+        Descripción: mov.descripcion,
+        Tipo: getTipoInfo(mov.tipo).label,
+        Monto: (esIngreso ? 1 : -1) * mov.monto
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Movimientos");
+    XLSX.writeFile(wb, "movimientos_crowgest.xlsx");
+    toast.success('Excel exportado correctamente');
+  };
 
   return (
     <Layout>
@@ -98,29 +144,47 @@ export default function Movimientos() {
         </div>
 
         {/* Actions Bar */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
-            <input
-              type="text"
-              placeholder="Buscar movimientos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-field pl-10"
-            />
+        <div className="flex flex-col sm:flex-row gap-4 mb-6 justify-between">
+          <div className="flex flex-col sm:flex-row gap-4 flex-1">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+              <input
+                type="text"
+                placeholder="Buscar movimientos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input-field pl-10"
+              />
+            </div>
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+              <select
+                value={filterTipo}
+                onChange={(e) => setFilterTipo(e.target.value)}
+                className="select-field pl-10 pr-8"
+              >
+                <option value="">Todos los tipos</option>
+                <option value="venta">Ventas</option>
+                <option value="cobro">Cobros</option>
+                <option value="pago_proveedor">Pagos a Proveedores</option>
+              </select>
+            </div>
           </div>
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
-            <select
-              value={filterTipo}
-              onChange={(e) => setFilterTipo(e.target.value)}
-              className="select-field pl-10 pr-8"
+          <div className="flex gap-3">
+            <button
+              onClick={exportToPDF}
+              className="flex items-center gap-2 rounded-xl border border-edge-light bg-white/70 px-4 py-2 text-sm font-medium text-pastel-ink transition hover:bg-white/90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
             >
-              <option value="">Todos los tipos</option>
-              <option value="venta">Ventas</option>
-              <option value="cobro">Cobros</option>
-              <option value="pago_proveedor">Pagos a Proveedores</option>
-            </select>
+              <FileText size={18} className="text-red-500" />
+              PDF
+            </button>
+            <button
+              onClick={exportToExcel}
+              className="flex items-center gap-2 rounded-xl border border-edge-light bg-white/70 px-4 py-2 text-sm font-medium text-pastel-ink transition hover:bg-white/90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            >
+              <Download size={18} className="text-emerald-500" />
+              Excel
+            </button>
           </div>
         </div>
 

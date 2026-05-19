@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { DataProvider, useData } from './context/DataContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -74,6 +75,7 @@ function App() {
       <AuthProvider>
         <DataProvider>
           <BrowserRouter>
+            <Toaster position="top-right" richColors />
             <AppRoutes />
           </BrowserRouter>
         </DataProvider>

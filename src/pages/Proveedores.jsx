@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Edit, Trash2, Mail, Phone, MapPin, X, DollarSign } from 'lucide-react';
+import { toast } from 'sonner';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
@@ -28,16 +29,23 @@ export default function Proveedores() {
 
   const totalDeuda = proveedores.reduce((total, p) => total + p.saldoPendiente, 0);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingProveedor) {
-      updateProveedor(editingProveedor.id, formData);
-    } else {
-      addProveedor(formData);
+    try {
+      if (editingProveedor) {
+        await updateProveedor(editingProveedor.id, formData);
+        toast.success('Proveedor actualizado correctamente');
+      } else {
+        await addProveedor(formData);
+        toast.success('Proveedor creado correctamente');
+      }
+      setShowModal(false);
+      setEditingProveedor(null);
+      setFormData({ nombre: '', contacto: '', email: '', telefono: '', direccion: '' });
+    } catch (error) {
+      console.error(error);
+      toast.error('Hubo un error al guardar el proveedor');
     }
-    setShowModal(false);
-    setEditingProveedor(null);
-    setFormData({ nombre: '', contacto: '', email: '', telefono: '', direccion: '' });
   };
 
   const handleEdit = (proveedor) => {
@@ -52,28 +60,39 @@ export default function Proveedores() {
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (confirm('¿Estás seguro de eliminar este proveedor?')) {
-      deleteProveedor(id);
+      try {
+        await deleteProveedor(id);
+        toast.success('Proveedor eliminado');
+      } catch (error) {
+        console.error(error);
+        toast.error('Hubo un error al eliminar el proveedor');
+      }
     }
   };
 
-  const handlePago = () => {
+  const handlePago = async () => {
     if (!selectedProveedor || !pagoMonto) return;
     
     const monto = parseFloat(pagoMonto);
     if (monto <= 0) return;
 
-    addPago({
-      tipo: 'proveedor',
-      proveedorId: selectedProveedor.id,
-      monto: monto,
-      metodoPago: 'transferencia'
-    });
-
-    setShowPagoModal(false);
-    setSelectedProveedor(null);
-    setPagoMonto('');
+    try {
+      await addPago({
+        tipo: 'proveedor',
+        proveedorId: selectedProveedor.id,
+        monto: monto,
+        metodoPago: 'transferencia'
+      });
+      toast.success('Pago registrado correctamente');
+      setShowPagoModal(false);
+      setSelectedProveedor(null);
+      setPagoMonto('');
+    } catch (error) {
+      console.error(error);
+      toast.error('Hubo un error al registrar el pago');
+    }
   };
 
   return (
