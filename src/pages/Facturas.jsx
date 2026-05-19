@@ -133,30 +133,6 @@ import { useData } from '../context/DataContext';
     doc.save(`Factura_${factura.numero}.pdf`);
     toast.success(`Factura ${factura.numero} descargada`);
   };
-    const doc = new jsPDF();
-    doc.text('Reporte de Facturas - CrowGest', 14, 15);
-    
-    const tableData = filteredFacturas.map(factura => {
-      const cliente = clientes.find(c => c.id === factura.clienteId);
-      return [
-        factura.numero,
-        cliente?.nombre || 'Desconocido',
-        new Date(factura.fecha).toLocaleDateString(),
-        `$${factura.total.toLocaleString()}`,
-        `$${factura.saldoPendiente.toLocaleString()}`,
-        factura.estado
-      ];
-    });
-
-    doc.autoTable({
-      head: [['Número', 'Cliente', 'Fecha', 'Total', 'Saldo Pendiente', 'Estado']],
-      body: tableData,
-      startY: 25,
-    });
-
-    doc.save('facturas_crowgest.pdf');
-    toast.success('PDF exportado correctamente');
-  };
 
   const exportToPDF = () => {
     const doc = new jsPDF();
