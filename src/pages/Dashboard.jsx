@@ -5,7 +5,9 @@ import Header from '../components/layout/Header';
 import SalesOverviewChart from '../components/dashboard/SalesOverviewChart';
 import StatCard from '../components/dashboard/StatCard';
 import TopProductsChart from '../components/dashboard/TopProductsChart';
+import CategoryChart from '../components/dashboard/CategoryChart';
 import { useTheme } from '../context/ThemeContext';
+import { useData } from '../context/DataContext';
 import {
   pendingInvoices,
   recentSales,
@@ -36,6 +38,7 @@ const formatCurrency = (value) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
 
 export default function Dashboard() {
+  const { ventas, productos } = useData();
   const [period, setPeriod] = useState(6);
   const [channel, setChannel] = useState('all');
   const { theme, isDark } = useTheme();
@@ -92,6 +95,27 @@ export default function Dashboard() {
   ];
 
   const visibleSales = recentSales.filter((sale) => channel === 'all' || sale.channel === channel);
+
+  // Calcular datos para el gráfico de categorías basado en ventas reales
+  const categoryData = useMemo(() => {
+    const categoriesMap = {};
+    
+    ventas.forEach(venta => {
+      venta.items.forEach(item => {
+        const producto = productos.find(p => p.id === item.productoId);
+        const catName = producto?.categoria || 'Sin Categoría';
+        
+        if (!categoriesMap[catName]) {
+          categoriesMap[catName] = 0;
+        }
+        categoriesMap[catName] += item.subtotal;
+      });
+    });
+
+    return Object.entries(categoriesMap)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [ventas, productos]);
 
   return (
     <Layout>
@@ -169,11 +193,14 @@ export default function Dashboard() {
           <div className="xl:col-span-2">
             <SalesOverviewChart data={filteredSalesData} theme={theme} periodLabel={`${period} meses`} />
           </div>
-          <TopProductsChart
-            data={filteredProducts}
-            theme={theme}
-            channelLabel={channelOptions.find((option) => option.value === channel)?.label.toLowerCase() || 'todos'}
-          />
+          <div className="flex flex-col gap-6">
+            <TopProductsChart
+              data={filteredProducts}
+              theme={theme}
+              channelLabel={channelOptions.find((option) => option.value === channel)?.label.toLowerCase() || 'todos'}
+            />
+            <CategoryChart data={categoryData} theme={theme} />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">

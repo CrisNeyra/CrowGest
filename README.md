@@ -1,83 +1,62 @@
-# Portfolio Personal - React + Vite
+# CrowGest - Sistema de Gestión ERP/CRM
 
-Un portfolio personal moderno y dinámico construido con React, Vite, TailwindCSS y Framer Motion.
+Un sistema completo de gestión empresarial (ERP/CRM) desarrollado con React, Vite y Tailwind CSS, integrado con Firebase para base de datos y autenticación en tiempo real.
 
-## 🚀 Tecnologías
+## 🚀 Características Principales
 
-- **React 18** - Biblioteca de UI
-- **Vite** - Build tool ultrarrápido
-- **TailwindCSS** - Framework CSS utility-first
-- **Framer Motion** - Animaciones fluidas
-- **React Icons** - Iconos para React
+*   **Autenticación Segura:** Sistema de login protegido utilizando Firebase Auth.
+*   **Base de Datos en Tiempo Real:** Integración con Firestore para sincronización instantánea en todos los dispositivos.
+*   **Dashboard Interactivo:** Gráficos avanzados (Ventas vs Egresos, Productos más vendidos, Ventas por categoría) usando Recharts.
+*   **Gestión de Clientes y Proveedores:** ABM (Alta, Baja, Modificación) completo con control de saldos y deudas.
+*   **Control de Inventario:** Gestión de productos, cálculo de costos, precios y alertas automáticas de stock bajo.
+*   **Facturación y Ventas:** Registro de ventas con carrito integrado, generación de facturas y control de estados (Pendiente, Parcial, Pagada).
+*   **Exportación de Reportes:** Descarga de reportes en PDF y Excel para Ventas, Facturas y Movimientos.
+*   **Generación de Facturas en PDF:** Descarga individual de cada factura en formato PDF lista para imprimir.
+*   **Modo Oscuro/Claro:** Interfaz moderna con soporte nativo para Dark Mode y diseño "Pastel" profesional.
+*   **Notificaciones:** Sistema de alertas visuales (Toasts) para confirmar acciones.
 
-## ✨ Características
+## 🛠️ Tecnologías Utilizadas
 
-- 🌙 Modo oscuro/claro con persistencia
-- 🎨 Diseño glassmorphism moderno
-- ✨ Animaciones suaves y profesionales
-- 📱 Diseño totalmente responsivo
-- 🎯 Scroll suave entre secciones
-- 🌐 Fondo animado con partículas
-- ⚡ Rendimiento optimizado
+*   **Frontend:** React 18, Vite, React Router DOM
+*   **Estilos:** Tailwind CSS, Framer Motion (Animaciones), Lucide React (Íconos)
+*   **Backend & DB:** Firebase (Auth, Firestore)
+*   **Gráficos:** Recharts
+*   **Exportación:** jsPDF, jsPDF-AutoTable, XLSX
+*   **Notificaciones:** Sonner
 
-## 📦 Instalación
+## 📦 Instalación y Configuración Local
 
-```bash
-# Instalar dependencias
-npm install
+1.  **Clonar el repositorio:**
+    ```bash
+    git clone https://github.com/CrisNeyra/CrowGest.git
+    cd CrowGest
+    ```
 
-# Servidor de desarrollo
-npm run dev
+2.  **Instalar dependencias:**
+    ```bash
+    npm install
+    ```
 
-# Build de producción
-npm run build
+3.  **Configurar Variables de Entorno:**
+    Crea un archivo `.env` en la raíz del proyecto y agrega tus credenciales de Firebase:
+    ```env
+    VITE_FIREBASE_API_KEY=tu_api_key
+    VITE_FIREBASE_AUTH_DOMAIN=tu_auth_domain
+    VITE_FIREBASE_PROJECT_ID=tu_project_id
+    VITE_FIREBASE_STORAGE_BUCKET=tu_storage_bucket
+    VITE_FIREBASE_MESSAGING_SENDER_ID=tu_messaging_sender_id
+    VITE_FIREBASE_APP_ID=tu_app_id
+    ```
 
-# Preview del build
-npm run preview
-```
+4.  **Iniciar el servidor de desarrollo:**
+    ```bash
+    npm run dev
+    ```
+    La aplicación estará disponible en `http://localhost:3000` (o el puerto que asigne Vite).
 
-## 📁 Estructura del Proyecto
+## ☁️ Despliegue en Vercel
 
-```
-src/
-├── components/
-│   ├── Navbar.jsx        # Barra de navegación
-│   ├── Hero.jsx          # Sección principal
-│   ├── About.jsx         # Sobre mí
-│   ├── Projects.jsx      # Proyectos
-│   ├── Skills.jsx        # Habilidades técnicas
-│   ├── Contact.jsx       # Formulario de contacto
-│   ├── Footer.jsx        # Pie de página
-│   ├── LoadingScreen.jsx # Pantalla de carga
-│   └── ParticlesBackground.jsx # Fondo animado
-├── App.jsx               # Componente principal
-├── main.jsx              # Punto de entrada
-└── index.css             # Estilos globales
-```
-
-## 🎨 Personalización
-
-### Colores
-Edita `tailwind.config.js` para cambiar la paleta de colores:
-- `primary` - Color principal (azul)
-- `accent` - Color de acento (púrpura)
-
-### Contenido
-Personaliza el contenido en cada componente:
-- **Hero.jsx** - Tu nombre y título
-- **About.jsx** - Tu biografía y estadísticas
-- **Projects.jsx** - Tus proyectos
-- **Skills.jsx** - Tus habilidades técnicas
-- **Contact.jsx** - Tu información de contacto
-
-### Imágenes
-- Reemplaza los placeholders con tus propias imágenes
-- Añade tu foto en la sección About
-
-## 📝 Licencia
-
-MIT License - Siéntete libre de usar este proyecto como base para tu portfolio.
+El proyecto está configurado para desplegarse fácilmente en Vercel. Asegúrate de agregar las mismas variables de entorno del archivo `.env` en la configuración de tu proyecto en el panel de Vercel (Sección Settings > Environment Variables).
 
 ---
-
-Hecho con ❤️ usando React y TailwindCSS
+*Desarrollado para optimizar la gestión de pequeñas y medianas empresas.*

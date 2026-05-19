@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, FileText, Eye, CreditCard, X, Download } from 'lucide-react';
+import { Plus, Search, FileText, Eye, CreditCard, X, Download, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
@@ -9,8 +9,8 @@ import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
 
-export default function Facturas() {
-  const { facturas, clientes, ventas, addFactura, addPago } = useData();
+  export default function Facturas() {
+  const { facturas, clientes, ventas, productos, addFactura, addPago } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -75,6 +75,87 @@ export default function Facturas() {
       console.error(error);
       toast.error('Hubo un error al registrar el pago');
     }
+  };
+
+  const generateInvoicePDF = (factura) => {
+    const cliente = clientes.find(c => c.id === factura.clienteId);
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setTextColor(12, 39, 66); // pastel-ink
+    doc.text('FACTURA', 14, 22);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(58, 83, 112); // pastel-muted
+    doc.text(`Nº: ${factura.numero}`, 14, 30);
+    doc.text(`Fecha: ${new Date(factura.fecha).toLocaleDateString()}`, 14, 35);
+    doc.text(`Estado: ${factura.estado.toUpperCase()}`, 14, 40);
+
+    // Cliente info
+    doc.setFontSize(12);
+    doc.setTextColor(12, 39, 66);
+    doc.text('Datos del Cliente:', 14, 50);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(58, 83, 112);
+    doc.text(`Nombre: ${cliente?.nombre || 'Consumidor Final'}`, 14, 57);
+    doc.text(`Email: ${cliente?.email || 'N/A'}`, 14, 62);
+    doc.text(`Teléfono: ${cliente?.telefono || 'N/A'}`, 14, 67);
+    doc.text(`Dirección: ${cliente?.direccion || 'N/A'}`, 14, 72);
+
+    // Items table
+    const tableData = factura.items.map(item => {
+      const prod = productos?.find(p => p.id === item.productoId);
+      return [
+        prod?.nombre || 'Producto Eliminado',
+        item.cantidad.toString(),
+        `$${item.precioUnitario.toLocaleString()}`,
+        `$${item.subtotal.toLocaleString()}`
+      ];
+    });
+
+    doc.autoTable({
+      startY: 80,
+      head: [['Producto', 'Cantidad', 'Precio Unit.', 'Subtotal']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { fillColor: [2, 132, 199] } // sky-600
+    });
+
+    const finalY = doc.lastAutoTable.finalY || 80;
+    
+    doc.setFontSize(12);
+    doc.setTextColor(12, 39, 66);
+    doc.text(`Total: $${factura.total.toLocaleString()}`, 140, finalY + 15);
+    doc.text(`Saldo Pendiente: $${factura.saldoPendiente.toLocaleString()}`, 140, finalY + 22);
+
+    doc.save(`Factura_${factura.numero}.pdf`);
+    toast.success(`Factura ${factura.numero} descargada`);
+  };
+    const doc = new jsPDF();
+    doc.text('Reporte de Facturas - CrowGest', 14, 15);
+    
+    const tableData = filteredFacturas.map(factura => {
+      const cliente = clientes.find(c => c.id === factura.clienteId);
+      return [
+        factura.numero,
+        cliente?.nombre || 'Desconocido',
+        new Date(factura.fecha).toLocaleDateString(),
+        `$${factura.total.toLocaleString()}`,
+        `$${factura.saldoPendiente.toLocaleString()}`,
+        factura.estado
+      ];
+    });
+
+    doc.autoTable({
+      head: [['Número', 'Cliente', 'Fecha', 'Total', 'Saldo Pendiente', 'Estado']],
+      body: tableData,
+      startY: 25,
+    });
+
+    doc.save('facturas_crowgest.pdf');
+    toast.success('PDF exportado correctamente');
   };
 
   const exportToPDF = () => {
@@ -236,10 +317,11 @@ export default function Facturas() {
                       <td className="p-4">
                         <div className="flex items-center justify-center gap-1">
                           <button
-                            className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-                            title="Ver detalle"
+                            onClick={() => generateInvoicePDF(factura)}
+                            className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-sky-400 transition-colors"
+                            title="Descargar Factura PDF"
                           >
-                            <Eye size={16} />
+                            <Printer size={16} />
                           </button>
                           {factura.estado !== 'pagada' && (
                             <button
