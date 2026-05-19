@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Save, RefreshCw, Database, Palette, Bell, Shield } from 'lucide-react';
+import { Save, RefreshCw, Database, Palette, Bell, Shield, UploadCloud } from 'lucide-react';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
+import { useData } from '../context/DataContext';
 
 export default function Configuracion() {
+  const { migrateToFirebase } = useData();
+  const [isMigrating, setIsMigrating] = useState(false);
   const [settings, setSettings] = useState({
     nombreEmpresa: 'Mi Empresa',
     moneda: 'ARS',
@@ -162,6 +165,40 @@ export default function Configuracion() {
                     >
                       <RefreshCw size={16} />
                       Resetear todos los datos
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botón de Migración a Firebase */}
+              <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 dark:border-indigo-500/30 dark:bg-indigo-500/10">
+                <div className="flex items-start gap-3">
+                  <UploadCloud size={20} className="mt-0.5 text-sky-600 dark:text-indigo-400" />
+                  <div className="flex-1">
+                    <p className="font-medium text-sky-700 dark:text-indigo-300">Migrar datos locales a la Nube</p>
+                    <p className="mb-3 text-sm text-pastel-muted dark:text-slate-300">
+                      Si tenías datos guardados en tu navegador, presiona este botón para subirlos a Firebase.
+                    </p>
+                    <button
+                      onClick={async () => {
+                        if (confirm('¿Migrar los datos locales a Firebase?')) {
+                          setIsMigrating(true);
+                          try {
+                            await migrateToFirebase();
+                            alert('¡Datos migrados exitosamente a la nube!');
+                          } catch (error) {
+                            console.error(error);
+                            alert('Hubo un error al migrar los datos.');
+                          } finally {
+                            setIsMigrating(false);
+                          }
+                        }
+                      }}
+                      disabled={isMigrating}
+                      className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-500 disabled:opacity-50 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+                    >
+                      <UploadCloud size={16} />
+                      {isMigrating ? 'Migrando...' : 'Subir a Firebase'}
                     </button>
                   </div>
                 </div>

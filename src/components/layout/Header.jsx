@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react';
-import { Bell, Moon, Search, Sun, User } from 'lucide-react';
+import { Bell, Moon, Search, Sun, User, LogOut } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { auth } from '../../firebase';
+import { signOut } from 'firebase/auth';
 
 export default function Header({ title, subtitle }) {
   const [dolar, setDolar] = useState({ blue: { venta: 1220 }, oficial: { venta: 1090 } });
   const { isDark, toggleTheme } = useTheme();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchDolar = async () => {
@@ -75,14 +85,15 @@ export default function Header({ title, subtitle }) {
         </button>
 
         <button
-          className="flex items-center gap-3 rounded-xl border border-edge-light bg-white/70 px-2.5 py-1.5 transition hover:bg-white/90 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+          onClick={handleLogout}
+          className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50/50 px-2.5 py-1.5 text-red-600 transition hover:bg-red-100 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
+          title="Cerrar sesión"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-600 text-white dark:bg-indigo-600">
-            <User size={16} />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/50">
+            <LogOut size={16} />
           </div>
           <div className="hidden text-left md:block">
-            <p className="text-sm font-semibold text-pastel-ink dark:text-slate-100">Admin</p>
-            <p className="text-xs text-pastel-muted dark:text-slate-400">Administrador</p>
+            <p className="text-sm font-semibold">Salir</p>
           </div>
         </button>
       </div>
