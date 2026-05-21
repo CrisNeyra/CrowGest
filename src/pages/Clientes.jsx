@@ -66,14 +66,13 @@ export default function Clientes() {
   };
 
   return (
-    <Layout moduleClass="module-clientes">
+    <Layout>
       <Header title="Clientes" subtitle="Gestión de clientes del negocio" />
 
       <div className="p-6">
-        {/* Actions Bar */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between mb-6">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-pastel-muted dark:text-slate-500" size={20} />
             <input
               type="text"
               placeholder="Buscar clientes..."
@@ -82,16 +81,12 @@ export default function Clientes() {
               className="input-field pl-10"
             />
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="btn-success"
-          >
-            <Plus size={20} />
+          <button onClick={() => setShowModal(true)} className="btn-primary">
+            <Plus size={18} />
             Nuevo Cliente
           </button>
         </div>
 
-        {/* Clients Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClientes.map((cliente, index) => (
             <motion.div
@@ -109,8 +104,8 @@ export default function Clientes() {
                     </span>
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold">{cliente.nombre}</h3>
-                    <p className="text-zinc-500 text-sm">
+                    <h3 className="font-semibold text-pastel-ink dark:text-slate-100">{cliente.nombre}</h3>
+                    <p className="text-xs text-pastel-muted dark:text-slate-400">
                       Cliente desde {new Date(cliente.createdAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -118,13 +113,13 @@ export default function Clientes() {
                 <div className="flex gap-1">
                   <button
                     onClick={() => handleEdit(cliente)}
-                    className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                    className="p-2 rounded-lg text-pastel-muted hover:bg-pastel-mist hover:text-pastel-ink transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                   >
                     <Edit size={16} />
                   </button>
                   <button
                     onClick={() => handleDelete(cliente.id)}
-                    className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-red-400 transition-colors"
+                    className="p-2 rounded-lg text-pastel-muted hover:bg-red-50 hover:text-red-600 transition-colors dark:text-slate-400 dark:hover:bg-red-900/30 dark:hover:text-red-400"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -132,28 +127,29 @@ export default function Clientes() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-zinc-400">
+                <div className="flex items-center gap-2 text-pastel-muted dark:text-slate-400">
                   <Mail size={16} />
                   <span className="text-sm">{cliente.email}</span>
                 </div>
-                <div className="flex items-center gap-2 text-zinc-400">
+                <div className="flex items-center gap-2 text-pastel-muted dark:text-slate-400">
                   <Phone size={16} />
                   <span className="text-sm">{cliente.telefono}</span>
                 </div>
-                <div className="flex items-center gap-2 text-zinc-400">
+                <div className="flex items-center gap-2 text-pastel-muted dark:text-slate-400">
                   <MapPin size={16} />
                   <span className="text-sm">{cliente.direccion}</span>
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-zinc-800">
+              <div className="mt-4 pt-4 border-t border-edge-light dark:border-slate-800">
                 <div className="flex justify-between items-center">
-                  <span className="text-zinc-500 text-sm">Saldo</span>
+                  <span className="text-sm text-pastel-muted dark:text-slate-400">Saldo</span>
                   <span className={`font-semibold ${
-                    cliente.saldo > 0 ? 'text-amber-400' :
-                    cliente.saldo < 0 ? 'text-emerald-400' : 'text-zinc-400'
+                    cliente.saldo > 0 ? 'text-amber-600 dark:text-amber-400' :
+                    cliente.saldo < 0 ? 'text-emerald-600 dark:text-emerald-400' :
+                    'text-pastel-muted dark:text-slate-400'
                   }`}>
-                    ${Math.abs(cliente.saldo).toLocaleString()}
+                    ${Math.abs(cliente.saldo || 0).toLocaleString()}
                     {cliente.saldo > 0 ? ' (debe)' : cliente.saldo < 0 ? ' (a favor)' : ''}
                   </span>
                 </div>
@@ -164,34 +160,33 @@ export default function Clientes() {
 
         {filteredClientes.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-zinc-500">No se encontraron clientes</p>
+            <p className="text-pastel-muted dark:text-slate-500">No se encontraron clientes</p>
           </div>
         )}
 
-        {/* Modal */}
         <AnimatePresence>
           {showModal && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+              className="modal-overlay"
               onClick={() => setShowModal(false)}
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md"
+                className="modal-content max-w-md"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-white">
+                  <h2 className="text-xl font-bold text-pastel-ink dark:text-slate-100">
                     {editingCliente ? 'Editar Cliente' : 'Nuevo Cliente'}
                   </h2>
                   <button
                     onClick={() => setShowModal(false)}
-                    className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                    className="p-2 rounded-lg text-pastel-muted hover:bg-pastel-mist hover:text-pastel-ink transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                   >
                     <X size={20} />
                   </button>
@@ -239,14 +234,10 @@ export default function Clientes() {
                     />
                   </div>
                   <div className="flex gap-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowModal(false)}
-                      className="btn-secondary flex-1"
-                    >
+                    <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">
                       Cancelar
                     </button>
-                    <button type="submit" className="btn-success flex-1">
+                    <button type="submit" className="btn-primary flex-1">
                       {editingCliente ? 'Guardar' : 'Crear'}
                     </button>
                   </div>

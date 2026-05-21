@@ -15,11 +15,7 @@ export default function Proveedores() {
   const [selectedProveedor, setSelectedProveedor] = useState(null);
   const [pagoMonto, setPagoMonto] = useState('');
   const [formData, setFormData] = useState({
-    nombre: '',
-    contacto: '',
-    email: '',
-    telefono: '',
-    direccion: ''
+    nombre: '', contacto: '', email: '', telefono: '', direccion: ''
   });
 
   const filteredProveedores = proveedores.filter(proveedor =>
@@ -27,7 +23,7 @@ export default function Proveedores() {
     proveedor.contacto.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalDeuda = proveedores.reduce((total, p) => total + p.saldoPendiente, 0);
+  const totalDeuda = proveedores.reduce((total, p) => total + (p.saldoPendiente || 0), 0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -74,10 +70,8 @@ export default function Proveedores() {
 
   const handlePago = async () => {
     if (!selectedProveedor || !pagoMonto) return;
-    
     const monto = parseFloat(pagoMonto);
     if (monto <= 0) return;
-
     try {
       await addPago({
         tipo: 'proveedor',
@@ -96,27 +90,25 @@ export default function Proveedores() {
   };
 
   return (
-    <Layout moduleClass="module-proveedores">
+    <Layout>
       <Header title="Proveedores" subtitle="Gestión de proveedores y deudas" />
 
       <div className="p-6">
-        {/* Summary Card */}
-        <div className="card mb-6 bg-gradient-to-r from-rose-500/10 to-rose-600/5 border-rose-500/20">
+        <div className="card mb-6 bg-gradient-to-r from-rose-500/5 to-rose-600/10 border-rose-200/60 dark:border-rose-900/40">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-zinc-400 text-sm">Deuda Total a Proveedores</p>
-              <p className="text-3xl font-bold text-rose-400">${totalDeuda.toLocaleString()}</p>
+              <p className="text-sm text-pastel-muted dark:text-slate-400">Deuda Total a Proveedores</p>
+              <p className="text-3xl font-bold text-rose-600 dark:text-rose-400">${totalDeuda.toLocaleString()}</p>
             </div>
-            <div className="p-4 rounded-xl bg-rose-500/20">
-              <DollarSign size={32} className="text-rose-400" />
+            <div className="p-4 rounded-xl bg-rose-100 dark:bg-rose-500/20">
+              <DollarSign size={32} className="text-rose-600 dark:text-rose-400" />
             </div>
           </div>
         </div>
 
-        {/* Actions Bar */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between mb-6">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-pastel-muted dark:text-slate-500" size={20} />
             <input
               type="text"
               placeholder="Buscar proveedores..."
@@ -125,16 +117,11 @@ export default function Proveedores() {
               className="input-field pl-10"
             />
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="btn-danger"
-          >
-            <Plus size={20} />
-            Nuevo Proveedor
+          <button onClick={() => setShowModal(true)} className="btn-primary">
+            <Plus size={18} /> Nuevo Proveedor
           </button>
         </div>
 
-        {/* Providers Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProveedores.map((proveedor, index) => (
             <motion.div
@@ -152,20 +139,20 @@ export default function Proveedores() {
                     </span>
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold">{proveedor.nombre}</h3>
-                    <p className="text-zinc-500 text-sm">Contacto: {proveedor.contacto}</p>
+                    <h3 className="font-semibold text-pastel-ink dark:text-slate-100">{proveedor.nombre}</h3>
+                    <p className="text-xs text-pastel-muted dark:text-slate-400">Contacto: {proveedor.contacto}</p>
                   </div>
                 </div>
                 <div className="flex gap-1">
                   <button
                     onClick={() => handleEdit(proveedor)}
-                    className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                    className="p-2 rounded-lg text-pastel-muted hover:bg-pastel-mist hover:text-pastel-ink transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                   >
                     <Edit size={16} />
                   </button>
                   <button
                     onClick={() => handleDelete(proveedor.id)}
-                    className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-red-400 transition-colors"
+                    className="p-2 rounded-lg text-pastel-muted hover:bg-red-50 hover:text-red-600 transition-colors dark:text-slate-400 dark:hover:bg-red-900/30 dark:hover:text-red-400"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -173,27 +160,29 @@ export default function Proveedores() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-zinc-400">
+                <div className="flex items-center gap-2 text-pastel-muted dark:text-slate-400">
                   <Mail size={16} />
                   <span className="text-sm">{proveedor.email}</span>
                 </div>
-                <div className="flex items-center gap-2 text-zinc-400">
+                <div className="flex items-center gap-2 text-pastel-muted dark:text-slate-400">
                   <Phone size={16} />
                   <span className="text-sm">{proveedor.telefono}</span>
                 </div>
-                <div className="flex items-center gap-2 text-zinc-400">
+                <div className="flex items-center gap-2 text-pastel-muted dark:text-slate-400">
                   <MapPin size={16} />
                   <span className="text-sm">{proveedor.direccion}</span>
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-zinc-800">
+              <div className="mt-4 pt-4 border-t border-edge-light dark:border-slate-800">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-zinc-500 text-sm">Saldo Pendiente</span>
+                  <span className="text-sm text-pastel-muted dark:text-slate-400">Saldo Pendiente</span>
                   <span className={`font-bold text-lg ${
-                    proveedor.saldoPendiente > 0 ? 'text-rose-400' : 'text-emerald-400'
+                    proveedor.saldoPendiente > 0
+                      ? 'text-rose-600 dark:text-rose-400'
+                      : 'text-emerald-600 dark:text-emerald-400'
                   }`}>
-                    ${proveedor.saldoPendiente.toLocaleString()}
+                    ${(proveedor.saldoPendiente || 0).toLocaleString()}
                   </span>
                 </div>
                 {proveedor.saldoPendiente > 0 && (
@@ -203,7 +192,7 @@ export default function Proveedores() {
                       setPagoMonto('');
                       setShowPagoModal(true);
                     }}
-                    className="btn-secondary w-full justify-center text-sm"
+                    className="btn-secondary w-full text-sm"
                   >
                     <DollarSign size={16} />
                     Registrar Pago
@@ -216,7 +205,7 @@ export default function Proveedores() {
 
         {filteredProveedores.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-zinc-500">No se encontraron proveedores</p>
+            <p className="text-pastel-muted dark:text-slate-500">No se encontraron proveedores</p>
           </div>
         )}
 
@@ -227,23 +216,23 @@ export default function Proveedores() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+              className="modal-overlay"
               onClick={() => setShowModal(false)}
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md"
+                className="modal-content max-w-md"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-white">
+                  <h2 className="text-xl font-bold text-pastel-ink dark:text-slate-100">
                     {editingProveedor ? 'Editar Proveedor' : 'Nuevo Proveedor'}
                   </h2>
                   <button
                     onClick={() => setShowModal(false)}
-                    className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                    className="p-2 rounded-lg text-pastel-muted hover:bg-pastel-mist hover:text-pastel-ink transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                   >
                     <X size={20} />
                   </button>
@@ -301,14 +290,10 @@ export default function Proveedores() {
                     />
                   </div>
                   <div className="flex gap-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowModal(false)}
-                      className="btn-secondary flex-1"
-                    >
+                    <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">
                       Cancelar
                     </button>
-                    <button type="submit" className="btn-danger flex-1">
+                    <button type="submit" className="btn-primary flex-1">
                       {editingProveedor ? 'Guardar' : 'Crear'}
                     </button>
                   </div>
@@ -325,36 +310,38 @@ export default function Proveedores() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+              className="modal-overlay"
               onClick={() => setShowPagoModal(false)}
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md"
+                className="modal-content max-w-md"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-white">Pago a Proveedor</h2>
+                  <h2 className="text-xl font-bold text-pastel-ink dark:text-slate-100">Pago a Proveedor</h2>
                   <button
                     onClick={() => setShowPagoModal(false)}
-                    className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                    className="p-2 rounded-lg text-pastel-muted hover:bg-pastel-mist hover:text-pastel-ink transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                   >
                     <X size={20} />
                   </button>
                 </div>
 
                 <div className="space-y-4">
-                  <div className="bg-zinc-800 rounded-lg p-4">
+                  <div className="bg-pastel-mist border border-edge-light rounded-xl p-4 dark:bg-slate-800 dark:border-slate-700">
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-zinc-400">Proveedor:</span>
-                        <span className="text-white">{selectedProveedor.nombre}</span>
+                        <span className="text-pastel-muted dark:text-slate-400">Proveedor:</span>
+                        <span className="text-pastel-ink dark:text-slate-100">{selectedProveedor.nombre}</span>
                       </div>
-                      <div className="flex justify-between pt-2 border-t border-zinc-700">
-                        <span className="text-zinc-400 font-medium">Deuda Actual:</span>
-                        <span className="text-rose-400 font-bold">${selectedProveedor.saldoPendiente.toLocaleString()}</span>
+                      <div className="flex justify-between pt-2 border-t border-edge-light dark:border-slate-700">
+                        <span className="text-pastel-muted dark:text-slate-400 font-medium">Deuda Actual:</span>
+                        <span className="text-rose-600 dark:text-rose-400 font-bold">
+                          ${selectedProveedor.saldoPendiente.toLocaleString()}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -373,16 +360,13 @@ export default function Proveedores() {
                   </div>
 
                   <div className="flex gap-3 pt-4">
-                    <button
-                      onClick={() => setShowPagoModal(false)}
-                      className="btn-secondary flex-1"
-                    >
+                    <button onClick={() => setShowPagoModal(false)} className="btn-secondary flex-1">
                       Cancelar
                     </button>
                     <button
                       onClick={handlePago}
                       disabled={!pagoMonto || parseFloat(pagoMonto) <= 0}
-                      className="btn-success flex-1 disabled:opacity-50"
+                      className="btn-success flex-1"
                     >
                       Confirmar Pago
                     </button>

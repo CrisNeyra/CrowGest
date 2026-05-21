@@ -9,6 +9,34 @@ import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
 
+const TIPO_STYLES = {
+  venta: {
+    label: 'Venta',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    bg: 'bg-emerald-100 dark:bg-emerald-500/20',
+    icon: TrendingUp,
+  },
+  cobro: {
+    label: 'Cobro',
+    text: 'text-sky-700 dark:text-sky-400',
+    bg: 'bg-sky-100 dark:bg-sky-500/20',
+    icon: TrendingDown,
+  },
+  pago_proveedor: {
+    label: 'Pago Proveedor',
+    text: 'text-rose-600 dark:text-rose-400',
+    bg: 'bg-rose-100 dark:bg-rose-500/20',
+    icon: TrendingUp,
+  },
+};
+
+const defaultStyle = {
+  label: 'Otro',
+  text: 'text-pastel-muted dark:text-slate-400',
+  bg: 'bg-pastel-mist dark:bg-slate-800',
+  icon: ArrowLeftRight,
+};
+
 export default function Movimientos() {
   const { movimientos } = useData();
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,18 +48,7 @@ export default function Movimientos() {
     return matchSearch && matchTipo;
   }).reverse();
 
-  const getTipoInfo = (tipo) => {
-    switch (tipo) {
-      case 'venta':
-        return { label: 'Venta', color: 'text-emerald-400', bg: 'bg-emerald-500/20', icon: TrendingUp };
-      case 'cobro':
-        return { label: 'Cobro', color: 'text-blue-400', bg: 'bg-blue-500/20', icon: TrendingDown };
-      case 'pago_proveedor':
-        return { label: 'Pago Proveedor', color: 'text-rose-400', bg: 'bg-rose-500/20', icon: TrendingUp };
-      default:
-        return { label: tipo, color: 'text-zinc-400', bg: 'bg-zinc-500/20', icon: ArrowLeftRight };
-    }
-  };
+  const getTipoInfo = (tipo) => TIPO_STYLES[tipo] || { ...defaultStyle, label: tipo };
 
   const totalIngresos = movimientos
     .filter(m => m.tipo === 'venta' || m.tipo === 'cobro')
@@ -44,7 +61,6 @@ export default function Movimientos() {
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text('Reporte de Movimientos - CrowGest', 14, 15);
-    
     const tableData = filteredMovimientos.map(mov => {
       const esIngreso = mov.tipo === 'venta' || mov.tipo === 'cobro';
       return [
@@ -54,13 +70,11 @@ export default function Movimientos() {
         `${esIngreso ? '+' : '-'}$${mov.monto.toLocaleString()}`
       ];
     });
-
     doc.autoTable({
       head: [['Fecha', 'Descripción', 'Tipo', 'Monto']],
       body: tableData,
       startY: 25,
     });
-
     doc.save('movimientos_crowgest.pdf');
     toast.success('PDF exportado correctamente');
   };
@@ -75,7 +89,6 @@ export default function Movimientos() {
         Monto: (esIngreso ? 1 : -1) * mov.monto
       };
     });
-
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Movimientos");
@@ -88,7 +101,6 @@ export default function Movimientos() {
       <Header title="Movimientos" subtitle="Historial de todas las operaciones" />
 
       <div className="p-6">
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -97,11 +109,13 @@ export default function Movimientos() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-400 text-sm">Total Ingresos</p>
-                <p className="text-2xl font-bold text-emerald-400">${totalIngresos.toLocaleString()}</p>
+                <p className="text-sm text-pastel-muted dark:text-slate-400">Total Ingresos</p>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                  ${totalIngresos.toLocaleString()}
+                </p>
               </div>
-              <div className="p-3 rounded-xl bg-emerald-500/20">
-                <TrendingUp size={24} className="text-emerald-400" />
+              <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
+                <TrendingUp size={24} className="text-emerald-600 dark:text-emerald-400" />
               </div>
             </div>
           </motion.div>
@@ -114,11 +128,13 @@ export default function Movimientos() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-400 text-sm">Total Egresos</p>
-                <p className="text-2xl font-bold text-rose-400">${totalEgresos.toLocaleString()}</p>
+                <p className="text-sm text-pastel-muted dark:text-slate-400">Total Egresos</p>
+                <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">
+                  ${totalEgresos.toLocaleString()}
+                </p>
               </div>
-              <div className="p-3 rounded-xl bg-rose-500/20">
-                <TrendingDown size={24} className="text-rose-400" />
+              <div className="p-3 rounded-xl bg-rose-100 dark:bg-rose-500/20">
+                <TrendingDown size={24} className="text-rose-600 dark:text-rose-400" />
               </div>
             </div>
           </motion.div>
@@ -131,23 +147,26 @@ export default function Movimientos() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-400 text-sm">Balance</p>
-                <p className={`text-2xl font-bold ${totalIngresos - totalEgresos >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <p className="text-sm text-pastel-muted dark:text-slate-400">Balance</p>
+                <p className={`text-2xl font-bold ${
+                  totalIngresos - totalEgresos >= 0
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-rose-600 dark:text-rose-400'
+                }`}>
                   ${(totalIngresos - totalEgresos).toLocaleString()}
                 </p>
               </div>
-              <div className="p-3 rounded-xl bg-indigo-500/20">
-                <ArrowLeftRight size={24} className="text-indigo-400" />
+              <div className="p-3 rounded-xl bg-sky-100 dark:bg-indigo-500/20">
+                <ArrowLeftRight size={24} className="text-sky-700 dark:text-indigo-400" />
               </div>
             </div>
           </motion.div>
         </div>
 
-        {/* Actions Bar */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6 justify-between">
           <div className="flex flex-col sm:flex-row gap-4 flex-1">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-pastel-muted dark:text-slate-500" size={20} />
               <input
                 type="text"
                 placeholder="Buscar movimientos..."
@@ -157,7 +176,7 @@ export default function Movimientos() {
               />
             </div>
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-pastel-muted dark:text-slate-500" size={20} />
               <select
                 value={filterTipo}
                 onChange={(e) => setFilterTipo(e.target.value)}
@@ -171,24 +190,15 @@ export default function Movimientos() {
             </div>
           </div>
           <div className="flex gap-3">
-            <button
-              onClick={exportToPDF}
-              className="flex items-center gap-2 rounded-xl border border-edge-light bg-white/70 px-4 py-2 text-sm font-medium text-pastel-ink transition hover:bg-white/90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-            >
-              <FileText size={18} className="text-red-500" />
-              PDF
+            <button onClick={exportToPDF} className="btn-secondary">
+              <FileText size={18} className="text-red-500" /> PDF
             </button>
-            <button
-              onClick={exportToExcel}
-              className="flex items-center gap-2 rounded-xl border border-edge-light bg-white/70 px-4 py-2 text-sm font-medium text-pastel-ink transition hover:bg-white/90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-            >
-              <Download size={18} className="text-emerald-500" />
-              Excel
+            <button onClick={exportToExcel} className="btn-secondary">
+              <Download size={18} className="text-emerald-500" /> Excel
             </button>
           </div>
         </div>
 
-        {/* Movements List */}
         <div className="card">
           <div className="space-y-3">
             {filteredMovimientos.map((mov, index) => {
@@ -202,30 +212,31 @@ export default function Movimientos() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.03 }}
-                  className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-xl bg-pastel-mist/60 hover:bg-pastel-mist transition-colors dark:bg-slate-800/50 dark:hover:bg-slate-800"
                 >
                   <div className="flex items-center gap-4">
                     <div className={`p-3 rounded-xl ${tipoInfo.bg}`}>
-                      <TipoIcon size={20} className={tipoInfo.color} />
+                      <TipoIcon size={20} className={tipoInfo.text} />
                     </div>
                     <div>
-                      <p className="text-white font-medium">{mov.descripcion}</p>
-                      <p className="text-zinc-500 text-sm">
+                      <p className="font-medium text-pastel-ink dark:text-slate-100">{mov.descripcion}</p>
+                      <p className="text-sm text-pastel-muted dark:text-slate-400">
                         {new Date(mov.fecha).toLocaleDateString('es-ES', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
+                          day: '2-digit', month: 'short', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
                         })}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`font-bold text-lg ${esIngreso ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <p className={`font-bold text-lg ${
+                      esIngreso
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-rose-600 dark:text-rose-400'
+                    }`}>
                       {esIngreso ? '+' : '-'}${mov.monto.toLocaleString()}
                     </p>
-                    <span className={`text-xs px-2 py-1 rounded ${tipoInfo.bg} ${tipoInfo.color}`}>
+                    <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${tipoInfo.bg} ${tipoInfo.text}`}>
                       {tipoInfo.label}
                     </span>
                   </div>
@@ -235,8 +246,8 @@ export default function Movimientos() {
 
             {filteredMovimientos.length === 0 && (
               <div className="text-center py-12">
-                <ArrowLeftRight size={48} className="mx-auto text-zinc-700 mb-4" />
-                <p className="text-zinc-500">No hay movimientos registrados</p>
+                <ArrowLeftRight size={48} className="mx-auto text-pastel-muted/40 mb-4 dark:text-slate-700" />
+                <p className="text-pastel-muted dark:text-slate-500">No hay movimientos registrados</p>
               </div>
             )}
           </div>

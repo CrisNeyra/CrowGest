@@ -27,7 +27,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #e8eef8;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -39,7 +39,109 @@ body {
   background: #94a3b8;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
 ::selection {
   background: rgba(37, 99, 235, 0.18);
   color: #0c2742;
+}
+
+.dark ::selection {
+  background: rgba(99, 102, 241, 0.35);
+  color: #e2e8f0;
+}
+
+@layer components {
+  /* Tarjetas */
+  .card {
+    @apply rounded-2xl border border-edge-light bg-white/70 p-6 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md;
+  }
+
+  /* Títulos */
+  .page-title {
+    @apply text-2xl font-bold text-pastel-ink dark:text-slate-100 mb-6;
+  }
+
+  /* Botones */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-indigo-600 dark:hover:bg-indigo-500;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-edge-light bg-white/70 px-5 py-2.5 text-sm font-medium text-pastel-ink transition hover:bg-white/90 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700;
+  }
+
+  .btn-success {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-warning {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Formularios */
+  .input-field {
+    @apply w-full rounded-xl border border-edge-light bg-white/75 px-4 py-2.5 text-sm text-pastel-ink placeholder:text-pastel-muted focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500/20;
+  }
+
+  .select-field {
+    @apply w-full rounded-xl border border-edge-light bg-white/75 px-4 py-2.5 text-sm text-pastel-ink focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-colors cursor-pointer dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-indigo-500 dark:focus:ring-indigo-500/20;
+  }
+
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-pastel-muted dark:text-slate-300;
+  }
+
+  /* Tablas */
+  .table-header {
+    @apply border-b border-edge-light bg-pastel-mist/60 text-xs font-semibold uppercase tracking-wider text-pastel-muted dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400;
+  }
+
+  .table-row {
+    @apply border-b border-edge-light/60 transition-colors hover:bg-pastel-mist/50 dark:border-slate-800/60 dark:hover:bg-slate-800/40;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .badge-success {
+    @apply badge bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300;
+  }
+
+  .badge-warning {
+    @apply badge bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300;
+  }
+
+  .badge-danger {
+    @apply badge bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300;
+  }
+
+  .badge-info {
+    @apply badge bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300;
+  }
+
+  /* Modales */
+  .modal-overlay {
+    @apply fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 dark:bg-slate-950/70;
+  }
+
+  .modal-content {
+    @apply bg-white border border-edge-light rounded-2xl p-6 w-full shadow-xl dark:bg-slate-900 dark:border-slate-800;
+  }
 }

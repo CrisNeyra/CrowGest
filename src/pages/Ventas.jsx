@@ -33,21 +33,17 @@ export default function Ventas() {
     if (existente) {
       if (existente.cantidad < producto.stock) {
         setCarrito(carrito.map(item =>
-          item.productoId === producto.id
-            ? { ...item, cantidad: item.cantidad + 1 }
-            : item
+          item.productoId === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item
         ));
       }
-    } else {
-      if (producto.stock > 0) {
-        setCarrito([...carrito, {
-          productoId: producto.id,
-          nombre: producto.nombre,
-          precio: producto.precio,
-          cantidad: 1,
-          stockDisponible: producto.stock
-        }]);
-      }
+    } else if (producto.stock > 0) {
+      setCarrito([...carrito, {
+        productoId: producto.id,
+        nombre: producto.nombre,
+        precio: producto.precio,
+        cantidad: 1,
+        stockDisponible: producto.stock
+      }]);
     }
   };
 
@@ -67,13 +63,11 @@ export default function Ventas() {
     setCarrito(carrito.filter(item => item.productoId !== productoId));
   };
 
-  const calcularTotal = () => {
-    return carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
-  };
+  const calcularTotal = () =>
+    carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
 
   const handleSubmit = async () => {
     if (!selectedCliente || carrito.length === 0) return;
-
     try {
       await addVenta({
         clienteId: selectedCliente,
@@ -99,7 +93,6 @@ export default function Ventas() {
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text('Reporte de Ventas - CrowGest', 14, 15);
-    
     const tableData = filteredVentas.map(venta => {
       const cliente = clientes.find(c => c.id === venta.clienteId);
       return [
@@ -111,13 +104,11 @@ export default function Ventas() {
         venta.estado
       ];
     });
-
     doc.autoTable({
       head: [['Número', 'Cliente', 'Fecha', 'Items', 'Total', 'Estado']],
       body: tableData,
       startY: 25,
     });
-
     doc.save('ventas_crowgest.pdf');
     toast.success('PDF exportado correctamente');
   };
@@ -134,7 +125,6 @@ export default function Ventas() {
         Estado: venta.estado
       };
     });
-
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Ventas");
@@ -143,14 +133,13 @@ export default function Ventas() {
   };
 
   return (
-    <Layout moduleClass="module-ventas">
+    <Layout>
       <Header title="Ventas" subtitle="Registro de ventas realizadas" />
 
       <div className="p-6">
-        {/* Actions Bar */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between mb-6">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-pastel-muted dark:text-slate-500" size={20} />
             <input
               type="text"
               placeholder="Buscar ventas..."
@@ -160,32 +149,19 @@ export default function Ventas() {
             />
           </div>
           <div className="flex gap-3">
-            <button
-              onClick={exportToPDF}
-              className="flex items-center gap-2 rounded-xl border border-edge-light bg-white/70 px-4 py-2 text-sm font-medium text-pastel-ink transition hover:bg-white/90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-            >
-              <FileText size={18} className="text-red-500" />
-              PDF
+            <button onClick={exportToPDF} className="btn-secondary">
+              <FileText size={18} className="text-red-500" /> PDF
             </button>
-            <button
-              onClick={exportToExcel}
-              className="flex items-center gap-2 rounded-xl border border-edge-light bg-white/70 px-4 py-2 text-sm font-medium text-pastel-ink transition hover:bg-white/90 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-            >
-              <Download size={18} className="text-emerald-500" />
-              Excel
+            <button onClick={exportToExcel} className="btn-secondary">
+              <Download size={18} className="text-emerald-500" /> Excel
             </button>
-            <button
-              onClick={() => setShowModal(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-500 dark:bg-indigo-600 dark:hover:bg-indigo-500"
-            >
-              <Plus size={18} />
-              Nueva Venta
+            <button onClick={() => setShowModal(true)} className="btn-primary">
+              <Plus size={18} /> Nueva Venta
             </button>
           </div>
         </div>
 
-        {/* Sales Table */}
-        <div className="card overflow-hidden">
+        <div className="card overflow-hidden p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -210,27 +186,20 @@ export default function Ventas() {
                       className="table-row"
                     >
                       <td className="p-4">
-                        <span className="text-cyan-400 font-mono">{venta.numero}</span>
+                        <span className="font-mono text-sky-700 dark:text-indigo-400">{venta.numero}</span>
                       </td>
-                      <td className="p-4">
-                        <p className="text-white">{cliente?.nombre || 'Cliente eliminado'}</p>
-                      </td>
-                      <td className="p-4 text-zinc-400">
+                      <td className="p-4 text-pastel-ink dark:text-slate-100">{cliente?.nombre || 'Cliente eliminado'}</td>
+                      <td className="p-4 text-pastel-muted dark:text-slate-400">
                         {new Date(venta.fecha).toLocaleDateString('es-ES', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
+                          day: '2-digit', month: 'short', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
                         })}
                       </td>
-                      <td className="p-4 text-center text-zinc-400">
+                      <td className="p-4 text-center text-pastel-muted dark:text-slate-400">
                         {venta.items.length} producto(s)
                       </td>
-                      <td className="p-4 text-right">
-                        <span className="text-white font-semibold">
-                          ${venta.total.toLocaleString()}
-                        </span>
+                      <td className="p-4 text-right font-semibold text-pastel-ink dark:text-slate-100">
+                        ${venta.total.toLocaleString()}
                       </td>
                       <td className="p-4 text-center">
                         <span className="badge-success">{venta.estado}</span>
@@ -244,44 +213,40 @@ export default function Ventas() {
 
           {filteredVentas.length === 0 && (
             <div className="text-center py-12">
-              <ShoppingCart size={48} className="mx-auto text-zinc-700 mb-4" />
-              <p className="text-zinc-500">No hay ventas registradas</p>
+              <ShoppingCart size={48} className="mx-auto text-pastel-muted/40 mb-4 dark:text-slate-700" />
+              <p className="text-pastel-muted dark:text-slate-500">No hay ventas registradas</p>
             </div>
           )}
         </div>
 
-        {/* Modal Nueva Venta */}
         <AnimatePresence>
           {showModal && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+              className="modal-overlay"
               onClick={() => setShowModal(false)}
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+                className="modal-content max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0"
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-zinc-800">
-                  <h2 className="text-xl font-bold text-white">Nueva Venta</h2>
+                <div className="flex items-center justify-between p-6 border-b border-edge-light dark:border-slate-800">
+                  <h2 className="text-xl font-bold text-pastel-ink dark:text-slate-100">Nueva Venta</h2>
                   <button
                     onClick={() => setShowModal(false)}
-                    className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                    className="p-2 rounded-lg text-pastel-muted hover:bg-pastel-mist hover:text-pastel-ink transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                   >
                     <X size={20} />
                   </button>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 overflow-hidden flex">
-                  {/* Left - Products */}
-                  <div className="flex-1 p-6 border-r border-zinc-800 overflow-y-auto">
+                <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
+                  <div className="flex-1 p-6 lg:border-r border-edge-light overflow-y-auto dark:border-slate-800">
                     <div className="mb-4">
                       <label className="label">Cliente</label>
                       <select
@@ -299,7 +264,7 @@ export default function Ventas() {
                     <div className="mb-4">
                       <label className="label">Buscar productos</label>
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-pastel-muted dark:text-slate-500" size={18} />
                         <input
                           type="text"
                           value={productoSearch}
@@ -315,20 +280,26 @@ export default function Ventas() {
                         <div
                           key={producto.id}
                           onClick={() => agregarAlCarrito(producto)}
-                          className={`p-3 rounded-lg border transition-all cursor-pointer ${
+                          className={`p-3 rounded-xl border transition-all cursor-pointer ${
                             producto.stock === 0
-                              ? 'border-zinc-800 bg-zinc-800/30 opacity-50 cursor-not-allowed'
-                              : 'border-zinc-800 hover:border-cyan-500/50 hover:bg-zinc-800/50'
+                              ? 'border-edge-light bg-pastel-mist/40 opacity-50 cursor-not-allowed dark:border-slate-800 dark:bg-slate-800/30'
+                              : 'border-edge-light bg-white/70 hover:border-sky-500/50 hover:bg-white dark:border-slate-700 dark:bg-slate-800 dark:hover:border-indigo-500/50 dark:hover:bg-slate-700'
                           }`}
                         >
                           <div className="flex justify-between items-center">
                             <div>
-                              <p className="text-white font-medium">{producto.nombre}</p>
-                              <p className="text-zinc-500 text-sm">{producto.codigo}</p>
+                              <p className="font-medium text-pastel-ink dark:text-slate-100">{producto.nombre}</p>
+                              <p className="text-xs text-pastel-muted dark:text-slate-400">{producto.codigo}</p>
                             </div>
                             <div className="text-right">
-                              <p className="text-white font-semibold">${producto.precio.toLocaleString()}</p>
-                              <p className={`text-sm ${producto.stock <= producto.stockMinimo ? 'text-amber-400' : 'text-zinc-500'}`}>
+                              <p className="font-semibold text-pastel-ink dark:text-slate-100">
+                                ${producto.precio.toLocaleString()}
+                              </p>
+                              <p className={`text-xs ${
+                                producto.stock <= producto.stockMinimo
+                                  ? 'text-amber-600 dark:text-amber-400'
+                                  : 'text-pastel-muted dark:text-slate-500'
+                              }`}>
                                 Stock: {producto.stock}
                               </p>
                             </div>
@@ -338,24 +309,28 @@ export default function Ventas() {
                     </div>
                   </div>
 
-                  {/* Right - Cart */}
-                  <div className="w-96 p-6 flex flex-col bg-zinc-800/30">
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <div className="w-full lg:w-96 p-6 flex flex-col bg-pastel-mist/40 dark:bg-slate-800/30">
+                    <h3 className="text-lg font-semibold text-pastel-ink dark:text-slate-100 mb-4 flex items-center gap-2">
                       <ShoppingCart size={20} />
                       Carrito ({carrito.length})
                     </h3>
 
                     <div className="flex-1 overflow-y-auto space-y-3 mb-4">
                       {carrito.length === 0 ? (
-                        <p className="text-zinc-500 text-center py-8">El carrito está vacío</p>
+                        <p className="text-pastel-muted dark:text-slate-500 text-center py-8">
+                          El carrito está vacío
+                        </p>
                       ) : (
                         carrito.map(item => (
-                          <div key={item.productoId} className="bg-zinc-800 rounded-lg p-3">
+                          <div
+                            key={item.productoId}
+                            className="bg-white border border-edge-light rounded-xl p-3 dark:bg-slate-800 dark:border-slate-700"
+                          >
                             <div className="flex justify-between items-start mb-2">
-                              <p className="text-white font-medium text-sm">{item.nombre}</p>
+                              <p className="font-medium text-sm text-pastel-ink dark:text-slate-100">{item.nombre}</p>
                               <button
                                 onClick={() => eliminarDelCarrito(item.productoId)}
-                                className="text-zinc-500 hover:text-red-400 transition-colors"
+                                className="text-pastel-muted hover:text-red-500 transition-colors dark:text-slate-400 dark:hover:text-red-400"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -364,19 +339,19 @@ export default function Ventas() {
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => actualizarCantidad(item.productoId, item.cantidad - 1)}
-                                  className="w-7 h-7 rounded bg-zinc-700 text-white flex items-center justify-center hover:bg-zinc-600 transition-colors"
+                                  className="w-7 h-7 rounded bg-pastel-mist text-pastel-ink flex items-center justify-center hover:bg-edge-light transition-colors dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
                                 >
                                   <Minus size={14} />
                                 </button>
-                                <span className="text-white w-8 text-center">{item.cantidad}</span>
+                                <span className="text-pastel-ink dark:text-slate-100 w-8 text-center">{item.cantidad}</span>
                                 <button
                                   onClick={() => actualizarCantidad(item.productoId, item.cantidad + 1)}
-                                  className="w-7 h-7 rounded bg-zinc-700 text-white flex items-center justify-center hover:bg-zinc-600 transition-colors"
+                                  className="w-7 h-7 rounded bg-pastel-mist text-pastel-ink flex items-center justify-center hover:bg-edge-light transition-colors dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
                                 >
                                   <Plus size={14} />
                                 </button>
                               </div>
-                              <p className="text-cyan-400 font-semibold">
+                              <p className="text-sky-700 font-semibold dark:text-indigo-400">
                                 ${(item.precio * item.cantidad).toLocaleString()}
                               </p>
                             </div>
@@ -385,18 +360,17 @@ export default function Ventas() {
                       )}
                     </div>
 
-                    {/* Total */}
-                    <div className="border-t border-zinc-700 pt-4">
+                    <div className="border-t border-edge-light pt-4 dark:border-slate-700">
                       <div className="flex justify-between items-center mb-4">
-                        <span className="text-zinc-400">Total</span>
-                        <span className="text-2xl font-bold text-white">
+                        <span className="text-pastel-muted dark:text-slate-400">Total</span>
+                        <span className="text-2xl font-bold text-pastel-ink dark:text-slate-100">
                           ${calcularTotal().toLocaleString()}
                         </span>
                       </div>
                       <button
                         onClick={handleSubmit}
                         disabled={!selectedCliente || carrito.length === 0}
-                        className="btn-success w-full justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="btn-primary w-full"
                       >
                         Confirmar Venta
                       </button>

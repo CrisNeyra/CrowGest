@@ -53,14 +53,8 @@ export default function Productos() {
       setShowModal(false);
       setEditingProducto(null);
       setFormData({
-        codigo: '',
-        nombre: '',
-        descripcion: '',
-        precio: '',
-        costo: '',
-        stock: '',
-        stockMinimo: '',
-        categoria: ''
+        codigo: '', nombre: '', descripcion: '', precio: '',
+        costo: '', stock: '', stockMinimo: '', categoria: ''
       });
     } catch (error) {
       console.error(error);
@@ -96,15 +90,14 @@ export default function Productos() {
   };
 
   return (
-    <Layout moduleClass="module-productos">
+    <Layout>
       <Header title="Productos" subtitle="Gestión de inventario y stock" />
 
       <div className="p-6">
-        {/* Actions Bar */}
         <div className="flex flex-col lg:flex-row gap-4 justify-between mb-6">
           <div className="flex flex-col sm:flex-row gap-4 flex-1">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-pastel-muted dark:text-slate-500" size={20} />
               <input
                 type="text"
                 placeholder="Buscar productos..."
@@ -114,11 +107,11 @@ export default function Productos() {
               />
             </div>
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-pastel-muted dark:text-slate-500" size={20} />
               <select
                 value={filterCategoria}
                 onChange={(e) => setFilterCategoria(e.target.value)}
-                className="select-field pl-10 pr-8 min-w-[180px]"
+                className="select-field pl-10 pr-8 min-w-[200px]"
               >
                 <option value="">Todas las categorías</option>
                 {categorias.map(cat => (
@@ -127,17 +120,13 @@ export default function Productos() {
               </select>
             </div>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="btn-primary"
-          >
-            <Plus size={20} />
+          <button onClick={() => setShowModal(true)} className="btn-primary">
+            <Plus size={18} />
             Nuevo Producto
           </button>
         </div>
 
-        {/* Products Table */}
-        <div className="card overflow-hidden">
+        <div className="card overflow-hidden p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -162,43 +151,47 @@ export default function Productos() {
                     className="table-row"
                   >
                     <td className="p-4">
-                      <span className="text-zinc-400 font-mono text-sm">{producto.codigo}</span>
+                      <span className="font-mono text-sm text-pastel-muted dark:text-slate-400">{producto.codigo}</span>
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                          <Package size={18} className="text-purple-400" />
+                        <div className="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center dark:bg-indigo-500/20">
+                          <Package size={18} className="text-sky-700 dark:text-indigo-300" />
                         </div>
                         <div>
-                          <p className="text-white font-medium">{producto.nombre}</p>
-                          <p className="text-zinc-500 text-sm">{producto.descripcion}</p>
+                          <p className="font-medium text-pastel-ink dark:text-slate-100">{producto.nombre}</p>
+                          <p className="text-xs text-pastel-muted dark:text-slate-400">{producto.descripcion}</p>
                         </div>
                       </div>
                     </td>
                     <td className="p-4">
-                      <span className="badge bg-zinc-700 text-zinc-300">{producto.categoria}</span>
+                      <span className="badge bg-pastel-mist text-pastel-ink dark:bg-slate-800 dark:text-slate-300">{producto.categoria}</span>
                     </td>
-                    <td className="p-4 text-right text-zinc-400">
+                    <td className="p-4 text-right text-pastel-muted dark:text-slate-400">
                       ${producto.costo.toLocaleString()}
                     </td>
-                    <td className="p-4 text-right text-white font-medium">
+                    <td className="p-4 text-right font-medium text-pastel-ink dark:text-slate-100">
                       ${producto.precio.toLocaleString()}
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {producto.stock <= producto.stockMinimo && (
-                          <AlertTriangle size={16} className="text-amber-400" />
+                          <AlertTriangle size={16} className="text-amber-500" />
                         )}
-                        <span className={producto.stock <= producto.stockMinimo ? 'text-amber-400' : 'text-white'}>
+                        <span className={producto.stock <= producto.stockMinimo
+                          ? 'text-amber-600 dark:text-amber-400 font-medium'
+                          : 'text-pastel-ink dark:text-slate-100'
+                        }>
                           {producto.stock}
                         </span>
                       </div>
                     </td>
                     <td className="p-4 text-center">
-                      <span className={`badge ${
+                      <span className={
                         producto.stock === 0 ? 'badge-danger' :
-                        producto.stock <= producto.stockMinimo ? 'badge-warning' : 'badge-success'
-                      }`}>
+                        producto.stock <= producto.stockMinimo ? 'badge-warning' :
+                        'badge-success'
+                      }>
                         {producto.stock === 0 ? 'Sin stock' :
                          producto.stock <= producto.stockMinimo ? 'Stock bajo' : 'Disponible'}
                       </span>
@@ -207,13 +200,13 @@ export default function Productos() {
                       <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => handleEdit(producto)}
-                          className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                          className="p-2 rounded-lg text-pastel-muted hover:bg-pastel-mist hover:text-pastel-ink transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                         >
                           <Edit size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(producto.id)}
-                          className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-red-400 transition-colors"
+                          className="p-2 rounded-lg text-pastel-muted hover:bg-red-50 hover:text-red-600 transition-colors dark:text-slate-400 dark:hover:bg-red-900/30 dark:hover:text-red-400"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -227,35 +220,34 @@ export default function Productos() {
 
           {filteredProductos.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-zinc-500">No se encontraron productos</p>
+              <p className="text-pastel-muted dark:text-slate-500">No se encontraron productos</p>
             </div>
           )}
         </div>
 
-        {/* Modal */}
         <AnimatePresence>
           {showModal && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+              className="modal-overlay"
               onClick={() => setShowModal(false)}
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+                className="modal-content max-w-lg max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-white">
+                  <h2 className="text-xl font-bold text-pastel-ink dark:text-slate-100">
                     {editingProducto ? 'Editar Producto' : 'Nuevo Producto'}
                   </h2>
                   <button
                     onClick={() => setShowModal(false)}
-                    className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                    className="p-2 rounded-lg text-pastel-muted hover:bg-pastel-mist hover:text-pastel-ink transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                   >
                     <X size={20} />
                   </button>
@@ -360,11 +352,7 @@ export default function Productos() {
                     </div>
                   </div>
                   <div className="flex gap-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowModal(false)}
-                      className="btn-secondary flex-1"
-                    >
+                    <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">
                       Cancelar
                     </button>
                     <button type="submit" className="btn-primary flex-1">
