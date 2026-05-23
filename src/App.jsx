@@ -7,6 +7,11 @@ import Dashboard from './pages/Dashboard';
 import Clientes from './pages/Clientes';
 import Productos from './pages/Productos';
 import Ventas from './pages/Ventas';
+import Presupuestos from './pages/Presupuestos';
+import Pedidos from './pages/Pedidos';
+import PedidosAFacturar from './pages/PedidosAFacturar';
+import Remitos from './pages/Remitos';
+import Comprobantes from './pages/Comprobantes';
 import Facturas from './pages/Facturas';
 import Proveedores from './pages/Proveedores';
 import Pagos from './pages/Pagos';
@@ -60,6 +65,11 @@ function AppRoutes() {
       <Route path="/clientes" element={<PrivateRoute><Clientes /></PrivateRoute>} />
       <Route path="/productos" element={<PrivateRoute><Productos /></PrivateRoute>} />
       <Route path="/ventas" element={<PrivateRoute><Ventas /></PrivateRoute>} />
+      <Route path="/presupuestos" element={<PrivateRoute><Presupuestos /></PrivateRoute>} />
+      <Route path="/pedidos" element={<PrivateRoute><Pedidos /></PrivateRoute>} />
+      <Route path="/pedidos-a-facturar" element={<PrivateRoute><PedidosAFacturar /></PrivateRoute>} />
+      <Route path="/remitos" element={<PrivateRoute><Remitos /></PrivateRoute>} />
+      <Route path="/comprobantes" element={<PrivateRoute><Comprobantes /></PrivateRoute>} />
       <Route path="/facturas" element={<PrivateRoute><Facturas /></PrivateRoute>} />
       <Route path="/proveedores" element={<PrivateRoute><Proveedores /></PrivateRoute>} />
       <Route path="/pagos" element={<PrivateRoute><Pagos /></PrivateRoute>} />

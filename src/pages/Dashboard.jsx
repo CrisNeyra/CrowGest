@@ -9,11 +9,13 @@ import CategoryChart from '../components/dashboard/CategoryChart';
 import { useTheme } from '../context/ThemeContext';
 import { useData } from '../context/DataContext';
 import {
-  pendingInvoices,
-  recentSales,
-  salesVsExpensesData,
-  topProductsData,
-} from '../data/dashboardMock';
+  aggregateCategorySales,
+  aggregateSalesVsExpenses,
+  aggregateTopProducts,
+  countNewClientsInPeriod,
+  mapPendingInvoices,
+  mapRecentSales,
+} from '../utils/dashboardStats';
 
 const iconByKey = {
   sales: ShoppingCart,
@@ -28,94 +30,87 @@ const periodOptions = [
   { label: '12 meses', value: 12 },
 ];
 
-const channelOptions = [
-  { label: 'Todos', value: 'all' },
-  { label: 'Retail', value: 'retail' },
-  { label: 'Mayorista', value: 'wholesale' },
-];
-
 const formatCurrency = (value) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
 
 export default function Dashboard() {
-  const { ventas, productos } = useData();
+  const { ventas, facturas, clientes, productos, movimientos, getEstadisticas } = useData();
   const [period, setPeriod] = useState(6);
-  const [channel, setChannel] = useState('all');
   const { theme, isDark } = useTheme();
 
-  const filteredSalesData = useMemo(() => salesVsExpensesData.slice(-period), [period]);
+  const stats = getEstadisticas();
 
-  const salesNow = filteredSalesData.at(-1)?.sales ?? 0;
-  const salesBefore = filteredSalesData.at(-2)?.sales ?? salesNow;
-  const salesGrowth = salesBefore ? ((salesNow - salesBefore) / salesBefore) * 100 : 0;
-
-  const filteredProducts = useMemo(
-    () =>
-      topProductsData.map((product) => ({
-        name: product.name,
-        units: product.units[channel] ?? product.units.all,
-      })),
-    [channel]
+  const salesVsExpensesData = useMemo(
+    () => aggregateSalesVsExpenses(ventas, movimientos, period),
+    [ventas, movimientos, period]
   );
 
-  const totalPending = pendingInvoices.reduce((acc, invoice) => acc + invoice.amount, 0);
-  const newClients = filteredSalesData.reduce((acc, item) => acc + item.newClients, 0);
-  const hasLowStock = filteredProducts.some((product) => product.units < 80);
-  const stockStatus = hasLowStock ? 'Revisar stock bajo' : 'Estado OK';
+  const salesNow = salesVsExpensesData.at(-1)?.sales ?? 0;
+  const salesBefore = salesVsExpensesData.at(-2)?.sales ?? salesNow;
+  const salesGrowth = salesBefore ? ((salesNow - salesBefore) / salesBefore) * 100 : 0;
+
+  const topProducts = useMemo(
+    () => aggregateTopProducts(ventas, productos, period),
+    [ventas, productos, period]
+  );
+
+  const newClients = useMemo(
+    () => countNewClientsInPeriod(clientes, period),
+    [clientes, period]
+  );
+
+  const pendingInvoicesList = useMemo(
+    () => mapPendingInvoices(facturas, clientes),
+    [facturas, clientes]
+  );
+
+  const recentSalesList = useMemo(
+    () => mapRecentSales(ventas, clientes),
+    [ventas, clientes]
+  );
+
+  const categoryData = useMemo(
+    () => aggregateCategorySales(ventas, productos),
+    [ventas, productos]
+  );
+
+  const stockStatus =
+    stats.productosStockBajo > 0
+      ? `${stats.productosStockBajo} con stock bajo`
+      : 'Estado OK';
 
   const kpiData = [
     {
       title: 'Ventas del Mes',
-      value: formatCurrency(salesNow),
+      value: formatCurrency(stats.totalVentasMes),
       change: `${salesGrowth >= 0 ? '+' : ''}${salesGrowth.toFixed(1)}% vs mes anterior`,
       tone: salesGrowth >= 0 ? 'positive' : 'negative',
       icon: 'sales',
     },
     {
       title: 'Por Cobrar',
-      value: formatCurrency(totalPending),
-      change: `${pendingInvoices.length} facturas pendientes`,
+      value: formatCurrency(stats.totalPorCobrar),
+      change: `${pendingInvoicesList.length} facturas pendientes`,
       tone: 'negative',
       icon: 'wallet',
     },
     {
       title: 'Clientes',
-      value: `${(1200 + newClients).toLocaleString('es-AR')}`,
+      value: stats.totalClientes.toLocaleString('es-AR'),
       change: `+${newClients} nuevos (${period} meses)`,
       tone: 'positive',
       icon: 'users',
     },
     {
       title: 'Productos',
-      value: `${topProductsData.length * 65}`,
+      value: stats.totalProductos.toLocaleString('es-AR'),
       change: stockStatus,
-      tone: hasLowStock ? 'negative' : 'neutral',
+      tone: stats.productosStockBajo > 0 ? 'negative' : 'neutral',
       icon: 'package',
     },
   ];
 
-  const visibleSales = recentSales.filter((sale) => channel === 'all' || sale.channel === channel);
-
-  // Calcular datos para el gráfico de categorías basado en ventas reales
-  const categoryData = useMemo(() => {
-    const categoriesMap = {};
-    
-    ventas.forEach(venta => {
-      venta.items.forEach(item => {
-        const producto = productos.find(p => p.id === item.productoId);
-        const catName = producto?.categoria || 'Sin Categoría';
-        
-        if (!categoriesMap[catName]) {
-          categoriesMap[catName] = 0;
-        }
-        categoriesMap[catName] += item.subtotal;
-      });
-    });
-
-    return Object.entries(categoriesMap)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
-  }, [ventas, productos]);
+  const periodLabel = periodOptions.find((o) => o.value === period)?.label ?? `${period} meses`;
 
   return (
     <Layout>
@@ -154,25 +149,6 @@ export default function Dashboard() {
               ))}
             </select>
           </div>
-
-          <div className="flex items-center gap-2">
-            <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-pastel-muted'}`}>Canal:</span>
-            <select
-              value={channel}
-              onChange={(event) => setChannel(event.target.value)}
-              className={`rounded-xl border px-3 py-2 text-sm ${
-                isDark
-                  ? 'border-slate-700 bg-slate-800 text-slate-100'
-                  : 'border-edge-light bg-pastel-mist text-pastel-ink'
-              }`}
-            >
-              {channelOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
         </section>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -191,14 +167,10 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <div className="xl:col-span-2">
-            <SalesOverviewChart data={filteredSalesData} theme={theme} periodLabel={`${period} meses`} />
+            <SalesOverviewChart data={salesVsExpensesData} theme={theme} periodLabel={periodLabel} />
           </div>
           <div className="flex flex-col gap-6">
-            <TopProductsChart
-              data={filteredProducts}
-              theme={theme}
-              channelLabel={channelOptions.find((option) => option.value === channel)?.label.toLowerCase() || 'todos'}
-            />
+            <TopProductsChart data={topProducts} theme={theme} periodLabel={periodLabel} />
             <CategoryChart data={categoryData} theme={theme} />
           </div>
         </div>
@@ -217,25 +189,31 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-2">
-              {visibleSales.map((sale) => (
-                <article
-                  key={sale.id}
-                  className={`flex items-center justify-between rounded-xl px-4 py-3 ${
-                    isDark ? 'bg-slate-800/70' : 'bg-pastel-mist'
-                  }`}
-                >
-                  <div>
-                    <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>{sale.number}</p>
-                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-pastel-muted'}`}>{sale.customer}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>
-                      {formatCurrency(sale.amount)}
-                    </p>
-                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-pastel-muted'}`}>{sale.date}</p>
-                  </div>
-                </article>
-              ))}
+              {recentSalesList.length === 0 ? (
+                <p className={`py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-pastel-muted'}`}>
+                  No hay ventas registradas
+                </p>
+              ) : (
+                recentSalesList.map((sale) => (
+                  <article
+                    key={sale.id}
+                    className={`flex items-center justify-between rounded-xl px-4 py-3 ${
+                      isDark ? 'bg-slate-800/70' : 'bg-pastel-mist'
+                    }`}
+                  >
+                    <div>
+                      <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>{sale.number}</p>
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-pastel-muted'}`}>{sale.customer}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>
+                        {formatCurrency(sale.amount)}
+                      </p>
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-pastel-muted'}`}>{sale.date}</p>
+                    </div>
+                  </article>
+                ))
+              )}
             </div>
           </section>
 
@@ -252,29 +230,35 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-2">
-              {pendingInvoices.map((invoice) => (
-                <article
-                  key={invoice.id}
-                  className={`flex items-center justify-between rounded-xl px-4 py-3 ${
-                    isDark ? 'bg-slate-800/70' : 'bg-pastel-mist'
-                  }`}
-                >
-                  <div>
-                    <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>{invoice.number}</p>
-                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-pastel-muted'}`}>{invoice.customer}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>
-                      {formatCurrency(invoice.amount)}
-                    </p>
-                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-pastel-muted'}`}>{invoice.dueDate}</p>
-                    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
-                      {invoice.status === 'Pendiente' && <CheckCircle2 size={12} />}
-                      {invoice.status}
-                    </span>
-                  </div>
-                </article>
-              ))}
+              {pendingInvoicesList.length === 0 ? (
+                <p className={`py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-pastel-muted'}`}>
+                  No hay facturas pendientes de cobro
+                </p>
+              ) : (
+                pendingInvoicesList.map((invoice) => (
+                  <article
+                    key={invoice.id}
+                    className={`flex items-center justify-between rounded-xl px-4 py-3 ${
+                      isDark ? 'bg-slate-800/70' : 'bg-pastel-mist'
+                    }`}
+                  >
+                    <div>
+                      <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>{invoice.number}</p>
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-pastel-muted'}`}>{invoice.customer}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>
+                        {formatCurrency(invoice.amount)}
+                      </p>
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-pastel-muted'}`}>{invoice.dueDate}</p>
+                      <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                        {invoice.isPending && <CheckCircle2 size={12} />}
+                        {invoice.status}
+                      </span>
+                    </div>
+                  </article>
+                ))
+              )}
             </div>
           </section>
         </div>

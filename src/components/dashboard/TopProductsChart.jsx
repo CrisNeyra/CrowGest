@@ -1,6 +1,6 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-export default function TopProductsChart({ data, theme = 'light', channelLabel = 'todos los canales' }) {
+export default function TopProductsChart({ data, theme = 'light', periodLabel = '6 meses' }) {
   const isDark = theme === 'dark';
 
   return (
@@ -12,7 +12,7 @@ export default function TopProductsChart({ data, theme = 'light', channelLabel =
       <div className="mb-4">
         <h3 className={`text-base font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>Productos mas vendidos</h3>
         <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-pastel-muted'}`}>
-          Unidades vendidas en {channelLabel}
+          Unidades vendidas en los ultimos {periodLabel}
         </p>
       </div>
 

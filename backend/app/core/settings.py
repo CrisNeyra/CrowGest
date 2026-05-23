@@ -48,6 +48,14 @@ class Settings(BaseSettings):
         description="Si es True, get_current_user devuelve un usuario stub (solo dev/test).",
     )
 
+    afip_mode: Literal["simulated", "production"] = Field(
+        default="simulated",
+        description="simulated genera CAE de prueba; production requiere certificados ARCA.",
+    )
+    afip_cuit: str | None = Field(default=None, description="CUIT del emisor para WSFE.")
+    afip_punto_venta_default: int = Field(default=1, ge=1)
+    afip_cae_dias_validez: int = Field(default=10, ge=1, le=30)
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

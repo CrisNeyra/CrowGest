@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, FileText, CreditCard, X, Download, Printer } from 'lucide-react';
+import { Plus, Search, FileText, CreditCard, X, Download, Printer, Unlink, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
@@ -8,13 +9,18 @@ import * as XLSX from 'xlsx';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
+import DesvincularRemitoModal from '../components/ventas/DesvincularRemitoModal';
+import { etiquetaComprobante } from '../utils/comprobantesFiscales';
 
 export default function Facturas() {
-  const { facturas, clientes, ventas, productos, addFactura, addPago } = useData();
+  const { facturas, clientes, ventas, productos, remitos, addFactura, addPago, desvincularFacturaDeRemito } =
+    useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showPagoModal, setShowPagoModal] = useState(false);
+  const [showDesvincularModal, setShowDesvincularModal] = useState(false);
+  const [desvincularTarget, setDesvincularTarget] = useState(null);
   const [selectedFactura, setSelectedFactura] = useState(null);
   const [selectedVenta, setSelectedVenta] = useState('');
   const [pagoMonto, setPagoMonto] = useState('');
@@ -46,6 +52,20 @@ export default function Facturas() {
     } catch (error) {
       console.error(error);
       toast.error('Hubo un error al crear la factura');
+    }
+  };
+
+  const handleDesvincular = async (opciones) => {
+    if (!desvincularTarget) return;
+    try {
+      await desvincularFacturaDeRemito(desvincularTarget.factura.id, opciones);
+      toast.success('Desvinculación registrada correctamente');
+      setShowDesvincularModal(false);
+      setDesvincularTarget(null);
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message || 'No se pudo desvincular');
+      throw error;
     }
   };
 
@@ -238,6 +258,21 @@ export default function Facturas() {
                     >
                       <td className="p-4">
                         <span className="font-mono text-amber-600 dark:text-amber-400">{factura.numero}</span>
+                        {factura.pedidoNumero && (
+                          <p className="mt-0.5 text-xs text-pastel-muted dark:text-slate-500">
+                            Ped. {factura.pedidoNumero}
+                          </p>
+                        )}
+                        {factura.remitoNumero && (
+                          <p className="mt-0.5 text-xs text-pastel-muted dark:text-slate-500">
+                            Rem. {factura.remitoNumero}
+                          </p>
+                        )}
+                        {factura.cae && (
+                          <p className="mt-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                            {etiquetaComprobante(factura)}
+                          </p>
+                        )}
                       </td>
                       <td className="p-4 text-pastel-ink dark:text-slate-100">{cliente?.nombre || 'Cliente eliminado'}</td>
                       <td className="p-4 text-pastel-muted dark:text-slate-400">
@@ -274,6 +309,29 @@ export default function Facturas() {
                           >
                             <Printer size={16} />
                           </button>
+                          {!factura.cae && (
+                            <Link
+                              to="/comprobantes"
+                              className="p-2 rounded-lg text-pastel-muted hover:bg-emerald-50 hover:text-emerald-600 transition-colors dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400"
+                              title="Emitir comprobante AFIP"
+                            >
+                              <ShieldCheck size={16} />
+                            </Link>
+                          )}
+                          {factura.remitoId && !factura.bloqueado && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const remito = remitos.find((r) => r.id === factura.remitoId);
+                                setDesvincularTarget({ factura, remito });
+                                setShowDesvincularModal(true);
+                              }}
+                              className="p-2 rounded-lg text-pastel-muted hover:bg-amber-50 hover:text-amber-600 transition-colors dark:hover:bg-amber-900/30 dark:hover:text-amber-400"
+                              title="Desvincular remito"
+                            >
+                              <Unlink size={16} />
+                            </button>
+                          )}
                           {factura.estado !== 'pagada' && (
                             <button
                               onClick={() => {
@@ -469,6 +527,23 @@ export default function Facturas() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <DesvincularRemitoModal
+          isOpen={showDesvincularModal}
+          onClose={() => {
+            setShowDesvincularModal(false);
+            setDesvincularTarget(null);
+          }}
+          factura={desvincularTarget?.factura}
+          remito={desvincularTarget?.remito}
+          onConfirm={handleDesvincular}
+          puedeRevertirStock={
+            desvincularTarget
+              ? (desvincularTarget.remito?.facturaIds?.length || 0) <= 1 &&
+                !desvincularTarget.remito?.stockRevertido
+              : false
+          }
+        />
       </div>
     </Layout>
   );

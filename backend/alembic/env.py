@@ -8,6 +8,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from app.core.db import Base
+import app.modules.ventas.models  # noqa: F401 — registra metadata
 from app.core.settings import get_settings
 
 config = context.config

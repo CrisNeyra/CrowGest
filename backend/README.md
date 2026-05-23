@@ -44,6 +44,33 @@ Esto levanta:
 - Documentacion OpenAPI en `http://localhost:8000/api/v1/docs`.
 - Endpoint de salud: `GET http://localhost:8000/api/v1/health`.
 
+## Modulo ventas / comprobantes fiscales (v0.1)
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | `/api/v1/ventas/comprobantes` | Lista comprobantes |
+| POST | `/api/v1/ventas/comprobantes` | Crea borrador |
+| POST | `/api/v1/ventas/comprobantes/{id}/emitir` | Emite CAE (modo `AFIP_MODE=simulated`) |
+| POST | `/api/v1/ventas/comprobantes/{id}/nota-credito` | Nota de credito |
+| POST | `/api/v1/ventas/remitos/{rid}/vincular/{cid}` | Vincula remito ↔ comprobante |
+| POST | `/api/v1/ventas/remitos/{rid}/desvincular/{cid}` | Desvincula con reversion explicita |
+
+Todas las rutas (salvo health con auth deshabilitado en dev) requieren `Authorization: Bearer <Firebase JWT>`.
+
+Variables AFIP en `.env`:
+
+- `AFIP_MODE=simulated` — CAE de prueba (14 digitos).
+- `AFIP_MODE=production` — reservado para integracion WSFE/ARCA (certificados).
+
+Migracion inicial:
+
+```bash
+cd backend
+alembic upgrade head
+```
+
+Cada operacion fiscal registra entrada en `audit_logs`.
+
 Para sumar `pgadmin` (perfil opcional):
 
 ```bash
