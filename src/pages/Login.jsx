@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Mail, Lock, AlertCircle } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { toast } from 'sonner';
 import { auth } from '../firebase';
-import { useTheme } from '../context/ThemeContext';
+import BrandLogo from '../components/layout/BrandLogo';
 
 const LOGIN_VIDEO_SRC = '/videos/login-background.mp4';
 
@@ -14,7 +14,6 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [videoVisible, setVideoVisible] = useState(true);
-  const { isDark } = useTheme();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -53,9 +52,7 @@ export default function Login() {
           className={`absolute inset-0 ${
             videoVisible
               ? 'bg-gradient-to-br from-sky-900/55 via-indigo-950/45 to-slate-950/60'
-              : isDark
-                ? 'bg-slate-950'
-                : 'bg-gradient-to-br from-sky-100 via-sky-50 to-indigo-100'
+              : 'bg-slate-950'
           }`}
         />
       </div>
@@ -64,20 +61,13 @@ export default function Login() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`w-full max-w-md rounded-3xl border p-8 shadow-xl backdrop-blur-md ${
-            isDark ? 'border-slate-800/80 bg-slate-900/90' : 'border-white/40 bg-white/90'
-          }`}
+          className="w-full max-w-md rounded-3xl border border-slate-800/80 bg-slate-900/95 p-8 shadow-xl shadow-slate-950/50 backdrop-blur-md"
         >
-          <div className="mb-8 text-center">
-            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-600 text-white dark:bg-indigo-600">
-              <LogIn size={32} />
-            </div>
-            <h1 className={`text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>
-              Bienvenido a CrowGest
-            </h1>
-            <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-pastel-muted'}`}>
-              Ingresa tus credenciales para acceder al sistema
-            </p>
+          <div className="mb-8 flex flex-col items-center text-center">
+            <BrandLogo size="lg" className="mx-auto mb-5" />
+            <h1 className="text-2xl font-bold text-slate-100">Bienvenido a Gest Crow</h1>
+            <p className="mt-1 text-sm font-medium tracking-wide text-slate-400">Management System</p>
+            <p className="mt-3 text-sm text-slate-500">Ingresá tus credenciales</p>
           </div>
 
           {error && (
@@ -93,42 +83,34 @@ export default function Login() {
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label className={`mb-1.5 block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-pastel-muted'}`}>
+              <label className="mb-1.5 block text-sm font-medium text-slate-300">
                 Correo electrónico
               </label>
               <div className="relative">
-                <Mail className={`absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-pastel-muted'}`} />
+                <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className={`w-full rounded-xl border py-3 pl-10 pr-4 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500/50 ${
-                    isDark
-                      ? 'border-slate-700 bg-slate-800 text-slate-100 placeholder:text-slate-500'
-                      : 'border-edge-light bg-white text-pastel-ink placeholder:text-pastel-muted'
-                  }`}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800 py-3 pl-10 pr-4 text-slate-100 transition-colors placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                   placeholder="admin@empresa.com"
                 />
               </div>
             </div>
 
             <div>
-              <label className={`mb-1.5 block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-pastel-muted'}`}>
+              <label className="mb-1.5 block text-sm font-medium text-slate-300">
                 Contraseña
               </label>
               <div className="relative">
-                <Lock className={`absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-pastel-muted'}`} />
+                <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className={`w-full rounded-xl border py-3 pl-10 pr-4 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500/50 ${
-                    isDark
-                      ? 'border-slate-700 bg-slate-800 text-slate-100 placeholder:text-slate-500'
-                      : 'border-edge-light bg-white text-pastel-ink placeholder:text-pastel-muted'
-                  }`}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800 py-3 pl-10 pr-4 text-slate-100 transition-colors placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                   placeholder="••••••••"
                 />
               </div>
@@ -137,11 +119,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 font-medium text-white transition-all duration-200 ${
-                isDark
-                  ? 'bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-600/50'
-                  : 'bg-sky-600 hover:bg-sky-500 disabled:bg-sky-600/50'
-              }`}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 font-medium text-white transition-all duration-200 hover:bg-indigo-500 disabled:bg-indigo-600/50"
             >
               {loading ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />

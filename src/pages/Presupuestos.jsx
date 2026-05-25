@@ -23,8 +23,17 @@ const estadoLabel = {
 };
 
 export default function Presupuestos() {
-  const { presupuestos, clientes, productos, addPresupuesto, anularPresupuesto, convertirPresupuestoAPedido } =
-    useData();
+  const {
+    presupuestos,
+    clientes,
+    productos,
+    vendedores,
+    condicionesVenta,
+    bonificaciones,
+    addPresupuesto,
+    anularPresupuesto,
+    convertirPresupuestoAPedido,
+  } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [showModal, setShowModal] = useState(false);
@@ -81,6 +90,8 @@ export default function Presupuestos() {
       return [
         p.numero,
         cliente?.nombre || '-',
+        p.vendedorNombre || '-',
+        p.condicionVentaNombre || '-',
         new Date(p.fecha).toLocaleDateString('es-AR'),
         new Date(p.validezHasta).toLocaleDateString('es-AR'),
         p.items.length.toString(),
@@ -89,7 +100,7 @@ export default function Presupuestos() {
       ];
     });
     doc.autoTable({
-      head: [['Número', 'Cliente', 'Fecha', 'Válido hasta', 'Ítems', 'Total', 'Estado']],
+      head: [['Número', 'Cliente', 'Vendedor', 'Condición', 'Fecha', 'Válido hasta', 'Ítems', 'Total', 'Estado']],
       body: tableData,
       startY: 25,
     });
@@ -103,6 +114,8 @@ export default function Presupuestos() {
       return {
         Número: p.numero,
         Cliente: cliente?.nombre || '-',
+        Vendedor: p.vendedorNombre || '-',
+        Condición: p.condicionVentaNombre || '-',
         Fecha: new Date(p.fecha).toLocaleDateString('es-AR'),
         'Válido hasta': new Date(p.validezHasta).toLocaleDateString('es-AR'),
         Ítems: p.items.length,
@@ -165,6 +178,8 @@ export default function Presupuestos() {
                 <tr className="table-header">
                   <th className="p-4 text-left">Número</th>
                   <th className="p-4 text-left">Cliente</th>
+                  <th className="p-4 text-left">Vendedor</th>
+                  <th className="p-4 text-left">Condición</th>
                   <th className="p-4 text-left">Fecha</th>
                   <th className="p-4 text-left">Válido hasta</th>
                   <th className="p-4 text-center">Ítems</th>
@@ -188,6 +203,12 @@ export default function Presupuestos() {
                         <span className="font-mono text-sky-700 dark:text-indigo-400">{presupuesto.numero}</span>
                       </td>
                       <td className="p-4 text-pastel-ink dark:text-slate-100">{cliente?.nombre || '-'}</td>
+                      <td className="p-4 text-pastel-muted dark:text-slate-400">
+                        {presupuesto.vendedorNombre || '-'}
+                      </td>
+                      <td className="p-4 text-pastel-muted dark:text-slate-400">
+                        {presupuesto.condicionVentaNombre || '-'}
+                      </td>
                       <td className="p-4 text-pastel-muted dark:text-slate-400">
                         {new Date(presupuesto.fecha).toLocaleDateString('es-AR')}
                       </td>
@@ -254,6 +275,9 @@ export default function Presupuestos() {
         submitLabel="Guardar Presupuesto"
         clientes={clientes}
         productos={productos}
+        vendedores={vendedores}
+        condicionesVenta={condicionesVenta}
+        bonificaciones={bonificaciones}
         onSubmit={handleCreate}
       />
     </Layout>

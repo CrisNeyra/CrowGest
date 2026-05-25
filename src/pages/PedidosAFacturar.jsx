@@ -6,9 +6,11 @@ import { toast } from 'sonner';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
+import { usePermissions } from '../context/PermissionsContext';
 
 export default function PedidosAFacturar() {
   const { pedidos, facturas, clientes, facturarPedido } = useData();
+  const { can } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [processingId, setProcessingId] = useState(null);
 
@@ -50,6 +52,12 @@ export default function PedidosAFacturar() {
         title="Pedidos a Facturar"
         subtitle="Pedidos autorizados pendientes de comprobante"
       />
+
+      {!can('orders:invoice') && (
+        <p className="mx-6 mt-4 rounded-xl border border-amber-200/60 bg-amber-50/80 px-4 py-2 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+          Tu rol no puede generar facturas desde pedidos.
+        </p>
+      )}
 
       <div className="p-6">
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
@@ -136,19 +144,23 @@ export default function PedidosAFacturar() {
                         ${pedido.total.toLocaleString()}
                       </td>
                       <td className="p-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => handleFacturar(pedido)}
-                          disabled={isProcessing}
-                          className="btn-primary inline-flex items-center gap-2 py-2 text-sm"
-                        >
-                          {isProcessing ? (
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                          ) : (
-                            <Receipt size={16} />
-                          )}
-                          Facturar
-                        </button>
+                        {can('orders:invoice') ? (
+                          <button
+                            type="button"
+                            onClick={() => handleFacturar(pedido)}
+                            disabled={isProcessing}
+                            className="btn-primary inline-flex items-center gap-2 py-2 text-sm"
+                          >
+                            {isProcessing ? (
+                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                            ) : (
+                              <Receipt size={16} />
+                            )}
+                            Facturar
+                          </button>
+                        ) : (
+                          <span className="text-xs text-pastel-muted">Sin permiso</span>
+                        )}
                       </td>
                     </motion.tr>
                   );

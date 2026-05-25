@@ -7,12 +7,20 @@ import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
 
 export default function Proveedores() {
-  const { proveedores, addProveedor, updateProveedor, deleteProveedor, addPago } = useData();
+  const {
+    proveedores,
+    comprobantesProveedor,
+    addProveedor,
+    updateProveedor,
+    deleteProveedor,
+    addPago,
+  } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showPagoModal, setShowPagoModal] = useState(false);
   const [editingProveedor, setEditingProveedor] = useState(null);
   const [selectedProveedor, setSelectedProveedor] = useState(null);
+  const [selectedComprobante, setSelectedComprobante] = useState('');
   const [pagoMonto, setPagoMonto] = useState('');
   const [formData, setFormData] = useState({
     nombre: '', contacto: '', email: '', telefono: '', direccion: ''
@@ -71,17 +79,26 @@ export default function Proveedores() {
   const handlePago = async () => {
     if (!selectedProveedor || !pagoMonto) return;
     const monto = parseFloat(pagoMonto);
-    if (monto <= 0) return;
+    const comprobante = selectedComprobante
+      ? comprobantesProveedor.find((c) => c.id === selectedComprobante)
+      : null;
+    const maximo = comprobante?.saldoPendiente ?? selectedProveedor.saldoPendiente ?? 0;
+    if (monto <= 0 || monto > maximo) {
+      toast.error('El monto no puede superar la deuda seleccionada');
+      return;
+    }
     try {
       await addPago({
         tipo: 'proveedor',
         proveedorId: selectedProveedor.id,
+        comprobanteProveedorId: selectedComprobante || null,
         monto: monto,
         metodoPago: 'transferencia'
       });
       toast.success('Pago registrado correctamente');
       setShowPagoModal(false);
       setSelectedProveedor(null);
+      setSelectedComprobante('');
       setPagoMonto('');
     } catch (error) {
       console.error(error);
@@ -124,6 +141,11 @@ export default function Proveedores() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProveedores.map((proveedor, index) => (
+            (() => {
+              const pendientesProveedor = comprobantesProveedor.filter(
+                (c) => c.proveedorId === proveedor.id && (c.saldoPendiente || 0) > 0
+              );
+              return (
             <motion.div
               key={proveedor.id}
               initial={{ opacity: 0, y: 20 }}
@@ -185,10 +207,16 @@ export default function Proveedores() {
                     ${(proveedor.saldoPendiente || 0).toLocaleString()}
                   </span>
                 </div>
+                {pendientesProveedor.length > 0 && (
+                  <p className="mb-3 text-xs text-pastel-muted dark:text-slate-400">
+                    {pendientesProveedor.length} comprobante{pendientesProveedor.length === 1 ? '' : 's'} pendiente{pendientesProveedor.length === 1 ? '' : 's'}
+                  </p>
+                )}
                 {proveedor.saldoPendiente > 0 && (
                   <button
                     onClick={() => {
                       setSelectedProveedor(proveedor);
+                      setSelectedComprobante('');
                       setPagoMonto('');
                       setShowPagoModal(true);
                     }}
@@ -200,6 +228,8 @@ export default function Proveedores() {
                 )}
               </div>
             </motion.div>
+              );
+            })()
           ))}
         </div>
 
@@ -347,6 +377,34 @@ export default function Proveedores() {
                   </div>
 
                   <div>
+                    <label className="label">Imputar a</label>
+                    <select
+                      value={selectedComprobante}
+                      onChange={(e) => {
+                        const id = e.target.value;
+                        setSelectedComprobante(id);
+                        const comprobante = comprobantesProveedor.find((c) => c.id === id);
+                        setPagoMonto(comprobante ? String(comprobante.saldoPendiente || '') : '');
+                      }}
+                      className="select-field"
+                    >
+                      <option value="">Deuda más antigua / saldo general</option>
+                      {comprobantesProveedor
+                        .filter(
+                          (c) =>
+                            c.proveedorId === selectedProveedor.id &&
+                            (c.saldoPendiente || 0) > 0
+                        )
+                        .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.numero} — {c.ordenCompraNumero || 'OC'} — ${c.saldoPendiente.toLocaleString()}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div>
                     <label className="label">Monto a Pagar</label>
                     <input
                       type="number"
@@ -355,6 +413,11 @@ export default function Proveedores() {
                       className="input-field"
                       min="0.01"
                       step="0.01"
+                      max={
+                        selectedComprobante
+                          ? comprobantesProveedor.find((c) => c.id === selectedComprobante)?.saldoPendiente
+                          : selectedProveedor.saldoPendiente
+                      }
                       placeholder="Ingrese el monto"
                     />
                   </div>
@@ -365,7 +428,14 @@ export default function Proveedores() {
                     </button>
                     <button
                       onClick={handlePago}
-                      disabled={!pagoMonto || parseFloat(pagoMonto) <= 0}
+                      disabled={
+                        !pagoMonto ||
+                        parseFloat(pagoMonto) <= 0 ||
+                        parseFloat(pagoMonto) >
+                          (selectedComprobante
+                            ? comprobantesProveedor.find((c) => c.id === selectedComprobante)?.saldoPendiente || 0
+                            : selectedProveedor.saldoPendiente || 0)
+                      }
                       className="btn-success flex-1"
                     >
                       Confirmar Pago

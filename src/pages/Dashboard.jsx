@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CheckCircle2, Package, ShoppingCart, Users, Wallet } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ChevronUp, Package, ShoppingCart, Users, Wallet } from 'lucide-react';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import SalesOverviewChart from '../components/dashboard/SalesOverviewChart';
@@ -36,6 +36,7 @@ const formatCurrency = (value) =>
 export default function Dashboard() {
   const { ventas, facturas, clientes, productos, movimientos, getEstadisticas } = useData();
   const [period, setPeriod] = useState(6);
+  const [expandedPanels, setExpandedPanels] = useState({});
   const { theme, isDark } = useTheme();
 
   const stats = getEstadisticas();
@@ -111,25 +112,33 @@ export default function Dashboard() {
   ];
 
   const periodLabel = periodOptions.find((o) => o.value === period)?.label ?? `${period} meses`;
+  const isExpanded = (panelId) => Boolean(expandedPanels[panelId]);
+  const togglePanel = (panelId) =>
+    setExpandedPanels((prev) => ({
+      ...prev,
+      [panelId]: !prev[panelId],
+    }));
 
   return (
     <Layout>
-      <Header title="Dashboard" subtitle="Resumen general del negocio" />
+      <Header title="Menu Principal" subtitle="Resumen general del negocio" />
 
       <div className="space-y-6 p-6">
         <div>
           <h2 className={`text-xl font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>
-            Dashboard - Resumen general del negocio
+            Menu Principal - Resumen general del negocio
           </h2>
           <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-pastel-muted'}`}>
             Vista ejecutiva con indicadores clave de ventas, clientes y facturacion.
           </p>
         </div>
 
-        <section
-          className={`flex flex-wrap items-center gap-3 rounded-2xl p-4 shadow-sm ${
-            isDark ? 'border border-slate-800 bg-slate-900' : 'border border-edge-light bg-white/70 backdrop-blur-sm'
-          }`}
+        <CollapsiblePanel
+          title="Periodo"
+          subtitle="Rango usado para los indicadores del Dashboard"
+          isDark={isDark}
+          expanded={isExpanded('periodo')}
+          onToggle={() => togglePanel('periodo')}
         >
           <div className="flex items-center gap-2">
             <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-pastel-muted'}`}>Periodo:</span>
@@ -149,37 +158,70 @@ export default function Dashboard() {
               ))}
             </select>
           </div>
-        </section>
+        </CollapsiblePanel>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {kpiData.map((item) => (
-            <StatCard
+            <CollapsiblePanel
               key={item.title}
               title={item.title}
-              value={item.value}
-              change={item.change}
-              tone={item.tone}
-              icon={iconByKey[item.icon]}
-              theme={theme}
-            />
+              subtitle="Indicador ejecutivo"
+              isDark={isDark}
+              expanded={isExpanded(item.title)}
+              onToggle={() => togglePanel(item.title)}
+            >
+              <StatCard
+                title={item.title}
+                value={item.value}
+                change={item.change}
+                tone={item.tone}
+                icon={iconByKey[item.icon]}
+                theme={theme}
+              />
+            </CollapsiblePanel>
           ))}
         </div>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-          <div className="xl:col-span-2">
+          <CollapsiblePanel
+            title="Ventas vs Gastos"
+            subtitle={`Evolución mensual de los últimos ${periodLabel}`}
+            isDark={isDark}
+            expanded={isExpanded('ventas-vs-gastos')}
+            onToggle={() => togglePanel('ventas-vs-gastos')}
+            className="xl:col-span-2"
+          >
             <SalesOverviewChart data={salesVsExpensesData} theme={theme} periodLabel={periodLabel} />
-          </div>
+          </CollapsiblePanel>
           <div className="flex flex-col gap-6">
-            <TopProductsChart data={topProducts} theme={theme} periodLabel={periodLabel} />
-            <CategoryChart data={categoryData} theme={theme} />
+            <CollapsiblePanel
+              title="Productos más vendidos"
+              subtitle={`Unidades vendidas en los últimos ${periodLabel}`}
+              isDark={isDark}
+              expanded={isExpanded('productos-mas-vendidos')}
+              onToggle={() => togglePanel('productos-mas-vendidos')}
+            >
+              <TopProductsChart data={topProducts} theme={theme} periodLabel={periodLabel} />
+            </CollapsiblePanel>
+            <CollapsiblePanel
+              title="Ventas por Categoría"
+              subtitle="Distribución de ventas por categoría de producto"
+              isDark={isDark}
+              expanded={isExpanded('ventas-por-categoria')}
+              onToggle={() => togglePanel('ventas-por-categoria')}
+            >
+              <CategoryChart data={categoryData} theme={theme} />
+            </CollapsiblePanel>
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <section
-            className={`rounded-2xl p-5 shadow-sm ${
-              isDark ? 'border border-slate-800 bg-slate-900' : 'border border-edge-light bg-white/75 backdrop-blur-sm'
-            }`}
+          <CollapsiblePanel
+            title="Ventas Recientes"
+            subtitle="Últimas operaciones registradas"
+            isDark={isDark}
+            expanded={isExpanded('ventas-recientes')}
+            onToggle={() => togglePanel('ventas-recientes')}
           >
             <div className="mb-4 flex items-center justify-between">
               <h3 className={`text-base font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>Ventas Recientes</h3>
@@ -215,12 +257,14 @@ export default function Dashboard() {
                 ))
               )}
             </div>
-          </section>
+          </CollapsiblePanel>
 
-          <section
-            className={`rounded-2xl p-5 shadow-sm ${
-              isDark ? 'border border-slate-800 bg-slate-900' : 'border border-edge-light bg-white/75 backdrop-blur-sm'
-            }`}
+          <CollapsiblePanel
+            title="Facturas Pendientes"
+            subtitle="Comprobantes pendientes de cobro"
+            isDark={isDark}
+            expanded={isExpanded('facturas-pendientes')}
+            onToggle={() => togglePanel('facturas-pendientes')}
           >
             <div className="mb-4 flex items-center justify-between">
               <h3 className={`text-base font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>Facturas Pendientes</h3>
@@ -260,9 +304,39 @@ export default function Dashboard() {
                 ))
               )}
             </div>
-          </section>
+          </CollapsiblePanel>
         </div>
       </div>
     </Layout>
+  );
+}
+
+function CollapsiblePanel({ title, subtitle, isDark, expanded, onToggle, children, className = '' }) {
+  return (
+    <section
+      className={`rounded-2xl shadow-sm ${
+        isDark ? 'border border-slate-800 bg-slate-900' : 'border border-edge-light bg-white/75 backdrop-blur-sm'
+      } ${className}`}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
+      >
+        <div>
+          <h3 className={`text-base font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>
+            {title}
+          </h3>
+          {subtitle && (
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-pastel-muted'}`}>{subtitle}</p>
+          )}
+        </div>
+        <span className="inline-flex items-center gap-2 rounded-lg bg-sky-100 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:bg-indigo-500/20 dark:text-indigo-300">
+          {expanded ? 'Minimizar' : 'Maximizar'}
+          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </span>
+      </button>
+      {expanded && <div className="px-5 pb-5">{children}</div>}
+    </section>
   );
 }

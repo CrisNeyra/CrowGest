@@ -5,9 +5,11 @@ import { toast } from 'sonner';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
+import { usePermissions } from '../context/PermissionsContext';
 
 export default function Configuracion() {
   const { migrateToFirebase } = useData();
+  const { profile, usuarios, can, updateUserRole, roles, loading: permsLoading } = usePermissions();
   const [isMigrating, setIsMigrating] = useState(false);
   const [settings, setSettings] = useState({
     nombreEmpresa: 'Mi Empresa',
@@ -206,6 +208,78 @@ export default function Configuracion() {
               </div>
             </div>
           </motion.div>
+
+          {can('users:manage') && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="rounded-2xl border border-edge-light bg-white/70 p-6 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900"
+            >
+              <div className="mb-6 flex items-center gap-3">
+                <div className="rounded-lg bg-violet-100 p-2 dark:bg-violet-500/20">
+                  <Shield size={20} className="text-violet-700 dark:text-violet-300" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-pastel-ink dark:text-slate-100">
+                    Usuarios y permisos
+                  </h3>
+                  <p className="text-sm text-pastel-muted dark:text-slate-400">
+                    Tu rol: <strong>{roles[profile?.rol]?.label || profile?.rol}</strong>
+                  </p>
+                </div>
+              </div>
+
+              {permsLoading ? (
+                <p className="text-sm text-pastel-muted">Cargando usuarios...</p>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-edge-light dark:border-slate-700">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="table-header">
+                        <th className="p-3 text-left">Email</th>
+                        <th className="p-3 text-left">Nombre</th>
+                        <th className="p-3 text-left">Rol</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {usuarios.map((u) => (
+                        <tr key={u.id} className="table-row">
+                          <td className="p-3">{u.email}</td>
+                          <td className="p-3">{u.nombre}</td>
+                          <td className="p-3">
+                            <select
+                              value={u.rol || 'vendedor'}
+                              onChange={async (e) => {
+                                try {
+                                  await updateUserRole(u.id, e.target.value);
+                                  toast.success('Rol actualizado');
+                                } catch (error) {
+                                  toast.error(error.message || 'No se pudo actualizar');
+                                }
+                              }}
+                              className="select-field py-1.5 text-sm"
+                            >
+                              {Object.entries(roles).map(([key, meta]) => (
+                                <option key={key} value={key}>
+                                  {meta.label}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <p className="mt-4 text-xs text-pastel-muted dark:text-slate-500">
+                El primer usuario del sistema recibe rol Administrador. Los demás ingresan como Vendedor hasta
+                que un admin les asigne otro rol.
+              </p>
+            </motion.div>
+          )}
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}

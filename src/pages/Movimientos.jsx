@@ -28,6 +28,48 @@ const TIPO_STYLES = {
     bg: 'bg-rose-100 dark:bg-rose-500/20',
     icon: TrendingUp,
   },
+  recepcion_compra: {
+    label: 'Recepción compra',
+    text: 'text-violet-600 dark:text-violet-400',
+    bg: 'bg-violet-100 dark:bg-violet-500/20',
+    icon: TrendingDown,
+  },
+  anulacion_remito_compra: {
+    label: 'Anulación remito compra',
+    text: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-amber-100 dark:bg-amber-500/20',
+    icon: TrendingUp,
+  },
+  comprobante_proveedor: {
+    label: 'Comprobante proveedor',
+    text: 'text-violet-600 dark:text-violet-400',
+    bg: 'bg-violet-100 dark:bg-violet-500/20',
+    icon: TrendingDown,
+  },
+  nota_credito_proveedor: {
+    label: 'Nota crédito proveedor',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    bg: 'bg-emerald-100 dark:bg-emerald-500/20',
+    icon: TrendingUp,
+  },
+  anulacion_comprobante_proveedor: {
+    label: 'Anulación comprobante proveedor',
+    text: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-amber-100 dark:bg-amber-500/20',
+    icon: TrendingUp,
+  },
+  anulacion_cobro: {
+    label: 'Anulación cobro',
+    text: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-amber-100 dark:bg-amber-500/20',
+    icon: TrendingUp,
+  },
+  anulacion_pago_proveedor: {
+    label: 'Anulación pago proveedor',
+    text: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-amber-100 dark:bg-amber-500/20',
+    icon: TrendingDown,
+  },
 };
 
 const defaultStyle = {
@@ -186,6 +228,13 @@ export default function Movimientos() {
                 <option value="venta">Ventas</option>
                 <option value="cobro">Cobros</option>
                 <option value="pago_proveedor">Pagos a Proveedores</option>
+                <option value="recepcion_compra">Recepciones de compra</option>
+                <option value="anulacion_remito_compra">Anulaciones remito compra</option>
+                <option value="comprobante_proveedor">Comprobantes proveedor</option>
+                <option value="nota_credito_proveedor">Notas crédito proveedor</option>
+                <option value="anulacion_comprobante_proveedor">Anulaciones comprobante proveedor</option>
+                <option value="anulacion_cobro">Anulaciones de cobros</option>
+                <option value="anulacion_pago_proveedor">Anulaciones de pagos proveedor</option>
               </select>
             </div>
           </div>

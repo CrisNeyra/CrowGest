@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
+import { usePermissions } from '../context/PermissionsContext';
 import {
   isApiEnabled,
   crearComprobanteBorrador,
@@ -19,7 +20,8 @@ import {
 } from '../utils/comprobantesFiscales';
 
 export default function Comprobantes() {
-  const { facturas, clientes, emitirComprobanteFiscal, crearNotaCreditoFiscal } = useData();
+  const { facturas, clientes, tiposComprobante, emitirComprobanteFiscal, crearNotaCreditoFiscal } = useData();
+  const { can } = usePermissions();
   const [tab, setTab] = useState('pendientes');
   const [searchTerm, setSearchTerm] = useState('');
   const [showEmitModal, setShowEmitModal] = useState(false);
@@ -33,7 +35,21 @@ export default function Comprobantes() {
   const [motivoNc, setMotivoNc] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const tipoSel = TIPOS_COMPROBANTE.find((t) => t.value === tipoComprobante);
+  const tiposComprobanteDisponibles = useMemo(() => {
+    const desdeMaestro = (tiposComprobante || [])
+      .filter((t) => t.activo !== false)
+      .map((t) => ({
+        value: t.codigo,
+        label: t.nombre,
+        letra: t.letra,
+        afipCodigo: t.afipCodigo || null,
+        mueveStock: Boolean(t.mueveStock),
+        mueveCtaCte: Boolean(t.mueveCtaCte),
+      }));
+    return desdeMaestro.length ? desdeMaestro : TIPOS_COMPROBANTE;
+  }, [tiposComprobante]);
+
+  const tipoSel = tiposComprobanteDisponibles.find((t) => t.value === tipoComprobante);
   const letra = tipoSel?.letra || 'B';
 
   const pendientes = useMemo(
@@ -76,7 +92,11 @@ export default function Comprobantes() {
 
   const openEmitir = (factura) => {
     setSelectedFactura(factura);
-    setTipoComprobante('FB');
+    const primerFactura =
+      tiposComprobanteDisponibles.find((t) => t.value?.startsWith('F')) ||
+      tiposComprobanteDisponibles[0] ||
+      TIPOS_COMPROBANTE[0];
+    setTipoComprobante(primerFactura.value);
     setPuntoVenta(String(PUNTOS_VENTA_DEFAULT));
     setCae('');
     setCaeVencimiento('');
@@ -126,6 +146,8 @@ export default function Comprobantes() {
       const result = await emitirComprobanteFiscal(selectedFactura.id, {
         tipoComprobante,
         letra,
+        tipoComprobanteNombre: tipoSel?.label || tipoComprobante,
+        afipCodigo: tipoSel?.afipCodigo || null,
         puntoVenta: Number(puntoVenta),
         cae: usarSimulado ? undefined : cae,
         caeVencimiento: caeVencimiento || undefined,
@@ -259,7 +281,7 @@ export default function Comprobantes() {
                         )}
                       </td>
                       <td className="p-4 text-right">
-                        {tab === 'pendientes' && (
+                        {tab === 'pendientes' && can('invoices:fiscal') && (
                           <button
                             type="button"
                             onClick={() => openEmitir(factura)}
@@ -269,7 +291,10 @@ export default function Comprobantes() {
                             Emitir CAE
                           </button>
                         )}
-                        {tab === 'emitidos' && factura.estadoFiscal !== 'anulado' && (
+                        {tab === 'pendientes' && !can('invoices:fiscal') && (
+                          <span className="text-xs text-pastel-muted">Sin permiso fiscal</span>
+                        )}
+                        {tab === 'emitidos' && factura.estadoFiscal !== 'anulado' && can('invoices:fiscal') && (
                           <button
                             type="button"
                             onClick={() => openNc(factura)}
@@ -341,7 +366,9 @@ export default function Comprobantes() {
                       onChange={(e) => setTipoComprobante(e.target.value)}
                       className="select-field"
                     >
-                      {TIPOS_COMPROBANTE.filter((t) => t.value.startsWith('F')).map((t) => (
+                      {tiposComprobanteDisponibles
+                        .filter((t) => t.value?.startsWith('F') || t.mueveCtaCte)
+                        .map((t) => (
                         <option key={t.value} value={t.value}>
                           {t.label}
                         </option>

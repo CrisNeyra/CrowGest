@@ -1,18 +1,32 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, CreditCard, ArrowUpRight, ArrowDownRight, Filter, FileText, Download } from 'lucide-react';
+import { Fragment, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Search, CreditCard, ArrowUpRight, ArrowDownRight, Filter, FileText, Download, RotateCcw, AlertTriangle, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
+import { usePermissions } from '../context/PermissionsContext';
+
+const loadExportTools = async () => {
+  const [{ jsPDF }, autoTableModule, XLSX] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+    import('xlsx'),
+  ]);
+  return { jsPDF, autoTable: autoTableModule.default || autoTableModule.autoTable, XLSX };
+};
 
 export default function Pagos() {
-  const { pagos, clientes, proveedores, facturas } = useData();
+  const { pagos, clientes, proveedores, facturas, comprobantesProveedor, anularPago } = useData();
+  const { can } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('');
+  const [anulacionTarget, setAnulacionTarget] = useState(null);
+  const [motivoAnulacion, setMotivoAnulacion] = useState('');
+  const [savingAnulacion, setSavingAnulacion] = useState(false);
+  const [expandedPagoId, setExpandedPagoId] = useState(null);
+
+  const canCancel = can('payments:create');
 
   const filteredPagos = pagos.filter(pago => {
     const matchSearch = pago.numero.toLowerCase().includes(searchTerm.toLowerCase());
@@ -21,14 +35,31 @@ export default function Pagos() {
   }).reverse();
 
   const totalCobrado = pagos
-    .filter(p => p.tipo === 'cliente')
+    .filter(p => p.estado !== 'anulado' && p.tipo === 'cliente')
     .reduce((total, p) => total + p.monto, 0);
 
   const totalPagado = pagos
-    .filter(p => p.tipo === 'proveedor')
+    .filter(p => p.estado !== 'anulado' && p.tipo === 'proveedor')
     .reduce((total, p) => total + p.monto, 0);
 
-  const exportToPDF = () => {
+  const handleAnularPago = async () => {
+    if (!anulacionTarget) return;
+    setSavingAnulacion(true);
+    try {
+      await anularPago(anulacionTarget.id, motivoAnulacion);
+      toast.success(`${anulacionTarget.tipo === 'cliente' ? 'Recibo' : 'Orden de pago'} anulada`);
+      setAnulacionTarget(null);
+      setMotivoAnulacion('');
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message || 'No se pudo anular el pago');
+    } finally {
+      setSavingAnulacion(false);
+    }
+  };
+
+  const exportToPDF = async () => {
+    const { jsPDF, autoTable } = await loadExportTools();
     const doc = new jsPDF();
     doc.text('Reporte de Pagos - CrowGest', 14, 15);
     const tableData = filteredPagos.map(pago => {
@@ -44,7 +75,7 @@ export default function Pagos() {
         `${esCliente ? '+' : '-'}$${pago.monto.toLocaleString()}`
       ];
     });
-    doc.autoTable({
+    autoTable(doc, {
       head: [['Número', 'Tipo', 'Destinatario', 'Fecha', 'Monto']],
       body: tableData,
       startY: 25,
@@ -53,7 +84,8 @@ export default function Pagos() {
     toast.success('PDF exportado correctamente');
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
+    const { XLSX } = await loadExportTools();
     const dataToExport = filteredPagos.map(pago => {
       const esCliente = pago.tipo === 'cliente';
       const destinatario = esCliente
@@ -163,7 +195,9 @@ export default function Pagos() {
                   <th className="text-left p-4">Destinatario</th>
                   <th className="text-left p-4">Referencia</th>
                   <th className="text-left p-4">Fecha</th>
+                  <th className="text-center p-4">Estado</th>
                   <th className="text-right p-4">Monto</th>
+                  <th className="text-right p-4">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -173,10 +207,20 @@ export default function Pagos() {
                     ? clientes.find(c => c.id === pago.clienteId)
                     : proveedores.find(p => p.id === pago.proveedorId);
                   const factura = pago.facturaId ? facturas.find(f => f.id === pago.facturaId) : null;
+                  const comprobanteProveedor = pago.comprobanteProveedorId
+                    ? comprobantesProveedor.find(c => c.id === pago.comprobanteProveedorId)
+                    : null;
+                  const imputaciones = pago.imputaciones?.length
+                    ? pago.imputaciones
+                    : comprobanteProveedor
+                      ? [{ comprobanteProveedorId: comprobanteProveedor.id, numeroComprobante: comprobanteProveedor.numero, monto: pago.monto }]
+                      : factura
+                        ? [{ facturaId: factura.id, numeroComprobante: factura.numero, monto: pago.monto }]
+                        : [];
 
                   return (
+                    <Fragment key={pago.id}>
                     <motion.tr
-                      key={pago.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.03 }}
@@ -207,7 +251,16 @@ export default function Pagos() {
                         </p>
                       </td>
                       <td className="p-4 text-pastel-muted dark:text-slate-400">
-                        {factura ? factura.numero : '-'}
+                        <p>{factura ? factura.numero : comprobanteProveedor?.numero || '-'}</p>
+                        {imputaciones.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedPagoId(expandedPagoId === pago.id ? null : pago.id)}
+                            className="mt-1 text-xs font-medium text-sky-700 hover:underline dark:text-indigo-400"
+                          >
+                            {expandedPagoId === pago.id ? 'Ocultar' : 'Ver'} {imputaciones.length} imputaciones
+                          </button>
+                        )}
                       </td>
                       <td className="p-4 text-pastel-muted dark:text-slate-400">
                         {new Date(pago.fecha).toLocaleDateString('es-ES', {
@@ -215,16 +268,70 @@ export default function Pagos() {
                           hour: '2-digit', minute: '2-digit'
                         })}
                       </td>
+                      <td className="p-4 text-center">
+                        <span className={pago.estado === 'anulado' ? 'badge-danger' : 'badge-success'}>
+                          {pago.estado === 'anulado' ? 'Anulado' : 'Vigente'}
+                        </span>
+                      </td>
                       <td className="p-4 text-right">
                         <span className={`font-bold text-lg ${
-                          esCliente
+                          pago.estado === 'anulado'
+                            ? 'text-pastel-muted line-through dark:text-slate-500'
+                            : esCliente
                             ? 'text-emerald-600 dark:text-emerald-400'
                             : 'text-rose-600 dark:text-rose-400'
                         }`}>
                           {esCliente ? '+' : '-'}${pago.monto.toLocaleString()}
                         </span>
                       </td>
+                      <td className="p-4 text-right">
+                        {canCancel && pago.estado !== 'anulado' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAnulacionTarget(pago);
+                              setMotivoAnulacion('');
+                            }}
+                            className="rounded-lg p-2 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30"
+                            title="Anular"
+                          >
+                            <RotateCcw size={18} />
+                          </button>
+                        )}
+                      </td>
                     </motion.tr>
+                    {expandedPagoId === pago.id && imputaciones.length > 0 && (
+                      <tr className="bg-pastel-mist/50 dark:bg-slate-900/60">
+                        <td colSpan={8} className="px-6 py-3">
+                          <div className="rounded-xl border border-edge-light bg-white/70 p-3 dark:border-slate-700 dark:bg-slate-800">
+                            <p className="mb-2 text-sm font-semibold text-pastel-ink dark:text-slate-100">
+                              Detalle de imputaciones
+                            </p>
+                            <div className="space-y-2">
+                              {imputaciones.map((imputacion) => {
+                                const comp = imputacion.comprobanteProveedorId
+                                  ? comprobantesProveedor.find((c) => c.id === imputacion.comprobanteProveedorId)
+                                  : null;
+                                const fac = imputacion.facturaId
+                                  ? facturas.find((f) => f.id === imputacion.facturaId)
+                                  : null;
+                                return (
+                                  <div key={`${pago.id}-${imputacion.comprobanteProveedorId || imputacion.facturaId || imputacion.numeroComprobante}`} className="flex justify-between gap-4 text-sm">
+                                    <span className="text-pastel-muted dark:text-slate-400">
+                                      {comp?.numeroProveedor || comp?.numero || fac?.numero || imputacion.numeroComprobante || 'Comprobante'}
+                                    </span>
+                                    <span className="font-semibold text-pastel-ink dark:text-slate-100">
+                                      ${(Number(imputacion.monto) || 0).toLocaleString()}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   );
                 })}
               </tbody>
@@ -239,6 +346,75 @@ export default function Pagos() {
           )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {anulacionTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="modal-overlay"
+            onClick={() => setAnulacionTarget(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="modal-content max-w-lg p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-lg font-bold">
+                  <AlertTriangle size={22} className="text-amber-600" />
+                  Anular {anulacionTarget.tipo === 'cliente' ? 'recibo' : 'orden de pago'} {anulacionTarget.numero}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setAnulacionTarget(null)}
+                  className="rounded-lg p-1 hover:bg-pastel-mist dark:hover:bg-slate-800"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+                La anulación revierte saldos del comprobante, cuenta corriente y tesorería. Si el movimiento de
+                tesorería ya está conciliado, la operación será bloqueada.
+              </div>
+
+              <div className="mb-4">
+                <label className="label">Motivo</label>
+                <textarea
+                  value={motivoAnulacion}
+                  onChange={(e) => setMotivoAnulacion(e.target.value)}
+                  rows={3}
+                  className="input-field resize-none"
+                  placeholder="Ej: carga duplicada o error de imputación"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAnulacionTarget(null)}
+                  disabled={savingAnulacion}
+                  className="btn-secondary"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAnularPago}
+                  disabled={savingAnulacion}
+                  className="btn-danger"
+                >
+                  {savingAnulacion ? 'Anulando...' : 'Anular y revertir'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Layout>
   );
 }

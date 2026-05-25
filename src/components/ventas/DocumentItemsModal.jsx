@@ -9,10 +9,16 @@ export default function DocumentItemsModal({
   submitLabel,
   clientes,
   productos,
+  vendedores = [],
+  condicionesVenta = [],
+  bonificaciones = [],
   onSubmit,
   observacionesLabel = 'Observaciones',
 }) {
   const [selectedCliente, setSelectedCliente] = useState('');
+  const [selectedVendedor, setSelectedVendedor] = useState('');
+  const [selectedCondicionVenta, setSelectedCondicionVenta] = useState('');
+  const [selectedBonificacion, setSelectedBonificacion] = useState('');
   const [carrito, setCarrito] = useState([]);
   const [productoSearch, setProductoSearch] = useState('');
   const [observaciones, setObservaciones] = useState('');
@@ -21,12 +27,19 @@ export default function DocumentItemsModal({
   useEffect(() => {
     if (!isOpen) {
       setSelectedCliente('');
+      setSelectedVendedor('');
+      setSelectedCondicionVenta('');
+      setSelectedBonificacion('');
       setCarrito([]);
       setProductoSearch('');
       setObservaciones('');
       setSaving(false);
     }
   }, [isOpen]);
+
+  const vendedoresActivos = vendedores.filter((v) => v.activo !== false);
+  const condicionesActivas = condicionesVenta.filter((c) => c.activo !== false);
+  const bonificacionesActivas = bonificaciones.filter((b) => b.activo !== false);
 
   const filteredProductos = productos.filter(
     (p) =>
@@ -67,22 +80,49 @@ export default function DocumentItemsModal({
     }
   };
 
-  const calcularTotal = () => carrito.reduce((total, item) => total + item.precio * item.cantidad, 0);
+  const subtotalBruto = carrito.reduce((total, item) => total + item.precio * item.cantidad, 0);
+  const condicionVenta = condicionesActivas.find((c) => c.id === selectedCondicionVenta);
+  const bonificacion = bonificacionesActivas.find((b) => b.id === selectedBonificacion);
+  const descuentoCondicion =
+    subtotalBruto * ((condicionVenta?.descuentoPorcentaje || 0) / 100);
+  const recargoCondicion = subtotalBruto * ((condicionVenta?.recargoPorcentaje || 0) / 100);
+  const baseConCondicion = subtotalBruto - descuentoCondicion + recargoCondicion;
+  const descuentoBonificacion = bonificacion
+    ? bonificacion.tipo === 'monto_fijo'
+      ? Math.min(baseConCondicion, bonificacion.valor || 0)
+      : baseConCondicion * ((bonificacion.valor || 0) / 100)
+    : 0;
+  const totalDocumento = Math.max(0, baseConCondicion - descuentoBonificacion);
 
   const handleSubmit = async () => {
     if (!selectedCliente || carrito.length === 0) return;
     setSaving(true);
     try {
+      const vendedor = vendedoresActivos.find((v) => v.id === selectedVendedor);
       await onSubmit({
         clienteId: selectedCliente,
+        vendedorId: vendedor?.id || null,
+        vendedorNombre: vendedor?.nombre || null,
+        condicionVentaId: condicionVenta?.id || null,
+        condicionVentaNombre: condicionVenta?.nombre || null,
+        condicionVentaDiasPago: condicionVenta?.diasPago || 0,
+        bonificacionId: bonificacion?.id || null,
+        bonificacionNombre: bonificacion?.nombre || null,
+        bonificacionTipo: bonificacion?.tipo || null,
+        bonificacionValor: bonificacion?.valor || 0,
         observaciones: observaciones.trim(),
         items: carrito.map((item) => ({
           productoId: item.productoId,
+          nombre: item.nombre,
           cantidad: item.cantidad,
           precioUnitario: item.precio,
           subtotal: item.precio * item.cantidad,
         })),
-        total: calcularTotal(),
+        subtotalBruto,
+        descuentoCondicion,
+        recargoCondicion,
+        descuentoBonificacion,
+        total: totalDocumento,
       });
       onClose();
     } finally {
@@ -131,6 +171,56 @@ export default function DocumentItemsModal({
                     {clientes.map((cliente) => (
                       <option key={cliente.id} value={cliente.id}>
                         {cliente.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="mb-4">
+                    <label className="label">Vendedor</label>
+                    <select
+                      value={selectedVendedor}
+                      onChange={(e) => setSelectedVendedor(e.target.value)}
+                      className="select-field"
+                    >
+                      <option value="">Sin vendedor</option>
+                      {vendedoresActivos.map((vendedor) => (
+                        <option key={vendedor.id} value={vendedor.id}>
+                          {vendedor.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="label">Condición de venta</label>
+                    <select
+                      value={selectedCondicionVenta}
+                      onChange={(e) => setSelectedCondicionVenta(e.target.value)}
+                      className="select-field"
+                    >
+                      <option value="">Sin condición</option>
+                      {condicionesActivas.map((condicion) => (
+                        <option key={condicion.id} value={condicion.id}>
+                          {condicion.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <label className="label">Bonificación</label>
+                  <select
+                    value={selectedBonificacion}
+                    onChange={(e) => setSelectedBonificacion(e.target.value)}
+                    className="select-field"
+                  >
+                    <option value="">Sin bonificación</option>
+                    {bonificacionesActivas.map((bonif) => (
+                      <option key={bonif.id} value={bonif.id}>
+                        {bonif.nombre} ({bonif.tipo === 'monto_fijo' ? `$${bonif.valor}` : `${bonif.valor}%`})
                       </option>
                     ))}
                   </select>
@@ -243,11 +333,35 @@ export default function DocumentItemsModal({
                 </div>
 
                 <div className="border-t border-edge-light pt-4 dark:border-slate-700">
-                  <div className="mb-4 flex items-center justify-between">
-                    <span className="text-pastel-muted dark:text-slate-400">Total</span>
-                    <span className="text-2xl font-bold text-pastel-ink dark:text-slate-100">
-                      ${calcularTotal().toLocaleString()}
-                    </span>
+                  <div className="mb-4 space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-pastel-muted dark:text-slate-400">Subtotal</span>
+                      <span className="font-medium">${subtotalBruto.toLocaleString()}</span>
+                    </div>
+                    {descuentoCondicion > 0 && (
+                      <div className="flex items-center justify-between text-emerald-600">
+                        <span>Desc. condición</span>
+                        <span>-${descuentoCondicion.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {recargoCondicion > 0 && (
+                      <div className="flex items-center justify-between text-amber-600">
+                        <span>Recargo condición</span>
+                        <span>+${recargoCondicion.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {descuentoBonificacion > 0 && (
+                      <div className="flex items-center justify-between text-emerald-600">
+                        <span>Bonificación</span>
+                        <span>-${descuentoBonificacion.toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between border-t border-edge-light pt-2 dark:border-slate-700">
+                      <span className="text-pastel-muted dark:text-slate-400">Total</span>
+                      <span className="text-2xl font-bold text-pastel-ink dark:text-slate-100">
+                        ${totalDocumento.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                   <button
                     type="button"

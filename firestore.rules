@@ -6,23 +6,154 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isAllowedCollection(name) {
-      return name in [
-        'clientes',
-        'productos',
-        'proveedores',
-        'ventas',
-        'facturas',
-        'pagos',
-        'movimientos',
-        'presupuestos',
-        'pedidos',
-        'remitos',
-      ];
+    function userPath() {
+      return /databases/$(database)/documents/usuarios/$(request.auth.uid);
     }
 
-    match /{collection}/{documentId} {
-      allow read, write: if isSignedIn() && isAllowedCollection(collection);
+    function hasProfile() {
+      return isSignedIn() && exists(userPath());
+    }
+
+    function role() {
+      return hasProfile() ? get(userPath()).data.rol : '';
+    }
+
+    function isAdmin() {
+      return role() == 'admin';
+    }
+
+    function hasRole(roles) {
+      return hasProfile() && roles.hasAny([role()]);
+    }
+
+    function canReadBusiness() {
+      return hasProfile();
+    }
+
+    match /usuarios/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (
+          request.auth.uid == userId &&
+          request.resource.data.keys().hasOnly(['email', 'nombre', 'rol', 'createdAt']) &&
+          request.resource.data.rol == 'vendedor'
+        )
+      );
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        request.auth.uid == userId &&
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(['email', 'nombre', 'updatedAt']) &&
+        request.resource.data.rol == resource.data.rol
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /clientes/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'vendedor']);
+    }
+
+    match /productos/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'compras']);
+    }
+
+    match /proveedores/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'compras']);
+    }
+
+    match /vendedores/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor']);
+    }
+
+    match /condiciones_venta/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor']);
+    }
+
+    match /tipos_comprobante/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor']);
+    }
+
+    match /bonificaciones/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor']);
+    }
+
+    match /ventas/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'vendedor']);
+    }
+
+    match /presupuestos/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'vendedor']);
+    }
+
+    match /pedidos/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'vendedor']);
+    }
+
+    match /remitos/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor']);
+    }
+
+    match /facturas/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'tesoreria']);
+    }
+
+    match /ordenes_compra/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'compras']);
+    }
+
+    match /remitos_compra/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'compras']);
+    }
+
+    match /comprobantes_proveedor/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'compras', 'tesoreria']);
+    }
+
+    match /pagos/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'tesoreria']);
+    }
+
+    match /cuentas_tesoreria/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'tesoreria']);
+    }
+
+    match /movimientos_tesoreria/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'tesoreria']);
+    }
+
+    match /importaciones_bancarias/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'tesoreria']);
+    }
+
+    match /audit_log/{documentId} {
+      allow read: if canReadBusiness();
+      allow create: if hasProfile();
+      allow update, delete: if false;
+    }
+
+    match /movimientos/{documentId} {
+      allow read: if canReadBusiness();
+      allow write: if hasRole(['admin', 'supervisor', 'vendedor', 'compras', 'tesoreria']);
     }
   }
 }

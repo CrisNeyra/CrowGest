@@ -9,6 +9,7 @@ import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import DocumentItemsModal from '../components/ventas/DocumentItemsModal';
 import { useData } from '../context/DataContext';
+import { usePermissions } from '../context/PermissionsContext';
 
 const estadoBadge = {
   pending: 'badge-warning',
@@ -25,7 +26,18 @@ const estadoLabel = {
 };
 
 export default function Pedidos() {
-  const { pedidos, clientes, productos, addPedido, autorizarPedido, cancelarPedido } = useData();
+  const {
+    pedidos,
+    clientes,
+    productos,
+    vendedores,
+    condicionesVenta,
+    bonificaciones,
+    addPedido,
+    autorizarPedido,
+    cancelarPedido,
+  } = useData();
+  const { can } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [showModal, setShowModal] = useState(false);
@@ -84,6 +96,8 @@ export default function Pedidos() {
         p.numero,
         p.presupuestoNumero || '-',
         cliente?.nombre || '-',
+        p.vendedorNombre || '-',
+        p.condicionVentaNombre || '-',
         new Date(p.fecha).toLocaleDateString('es-AR'),
         p.items.length.toString(),
         `$${p.total.toLocaleString()}`,
@@ -91,7 +105,7 @@ export default function Pedidos() {
       ];
     });
     doc.autoTable({
-      head: [['Número', 'Presupuesto', 'Cliente', 'Fecha', 'Ítems', 'Total', 'Estado']],
+      head: [['Número', 'Presupuesto', 'Cliente', 'Vendedor', 'Condición', 'Fecha', 'Ítems', 'Total', 'Estado']],
       body: tableData,
       startY: 25,
     });
@@ -106,6 +120,8 @@ export default function Pedidos() {
         Número: p.numero,
         Presupuesto: p.presupuestoNumero || '-',
         Cliente: cliente?.nombre || '-',
+        Vendedor: p.vendedorNombre || '-',
+        Condición: p.condicionVentaNombre || '-',
         Fecha: new Date(p.fecha).toLocaleDateString('es-AR'),
         Ítems: p.items.length,
         Total: p.total,
@@ -121,7 +137,16 @@ export default function Pedidos() {
 
   return (
     <Layout>
-      <Header title="Pedidos" subtitle="Órdenes de venta — autorización requerida antes de facturar" />
+      <Header
+        title="Pedidos"
+        subtitle="Órdenes de venta — autorización requerida antes de facturar"
+      />
+
+      {!can('orders:authorize') && (
+        <p className="mx-6 mt-4 rounded-xl border border-amber-200/60 bg-amber-50/80 px-4 py-2 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+          Tu rol no incluye autorización de pedidos. Contactá a un supervisor o administrador.
+        </p>
+      )}
 
       <div className="p-6">
         <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row">
@@ -169,6 +194,8 @@ export default function Pedidos() {
                   <th className="p-4 text-left">Número</th>
                   <th className="p-4 text-left">Presupuesto</th>
                   <th className="p-4 text-left">Cliente</th>
+                  <th className="p-4 text-left">Vendedor</th>
+                  <th className="p-4 text-left">Condición</th>
                   <th className="p-4 text-left">Fecha</th>
                   <th className="p-4 text-left">Remito</th>
                   <th className="p-4 text-center">Ítems</th>
@@ -196,6 +223,12 @@ export default function Pedidos() {
                       </td>
                       <td className="p-4 text-pastel-ink dark:text-slate-100">{cliente?.nombre || '-'}</td>
                       <td className="p-4 text-pastel-muted dark:text-slate-400">
+                        {pedido.vendedorNombre || '-'}
+                      </td>
+                      <td className="p-4 text-pastel-muted dark:text-slate-400">
+                        {pedido.condicionVentaNombre || '-'}
+                      </td>
+                      <td className="p-4 text-pastel-muted dark:text-slate-400">
                         {new Date(pedido.fecha).toLocaleDateString('es-AR')}
                       </td>
                       <td className="p-4 font-mono text-xs text-pastel-muted dark:text-slate-400">
@@ -214,8 +247,9 @@ export default function Pedidos() {
                       </td>
                       <td className="p-4">
                         <div className="flex justify-end gap-2">
-                          {pedido.estado === 'pending' && (
+                          {pedido.estado === 'pending' && (can('orders:authorize') || can('orders:cancel')) && (
                             <>
+                              {can('orders:authorize') && (
                               <button
                                 type="button"
                                 onClick={() => handleAutorizar(pedido.id)}
@@ -224,6 +258,8 @@ export default function Pedidos() {
                               >
                                 <CheckCircle size={18} />
                               </button>
+                              )}
+                              {can('orders:cancel') && (
                               <button
                                 type="button"
                                 onClick={() => handleCancelar(pedido.id)}
@@ -232,6 +268,7 @@ export default function Pedidos() {
                               >
                                 <XCircle size={18} />
                               </button>
+                              )}
                             </>
                           )}
                         </div>
@@ -259,6 +296,9 @@ export default function Pedidos() {
         submitLabel="Guardar Pedido"
         clientes={clientes}
         productos={productos}
+        vendedores={vendedores}
+        condicionesVenta={condicionesVenta}
+        bonificaciones={bonificaciones}
         onSubmit={handleCreate}
       />
     </Layout>

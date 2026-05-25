@@ -1,23 +1,46 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { DataProvider, useData } from './context/DataContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Dashboard from './pages/Dashboard';
-import Clientes from './pages/Clientes';
-import Productos from './pages/Productos';
-import Ventas from './pages/Ventas';
-import Presupuestos from './pages/Presupuestos';
-import Pedidos from './pages/Pedidos';
-import PedidosAFacturar from './pages/PedidosAFacturar';
-import Remitos from './pages/Remitos';
-import Comprobantes from './pages/Comprobantes';
-import Facturas from './pages/Facturas';
-import Proveedores from './pages/Proveedores';
-import Pagos from './pages/Pagos';
-import Movimientos from './pages/Movimientos';
-import Configuracion from './pages/Configuracion';
-import Login from './pages/Login';
+import { PermissionsProvider, usePermissions } from './context/PermissionsContext';
+
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Clientes = lazy(() => import('./pages/Clientes'));
+const Productos = lazy(() => import('./pages/Productos'));
+const StockKardex = lazy(() => import('./pages/StockKardex'));
+const Maestros = lazy(() => import('./pages/Maestros'));
+const Ventas = lazy(() => import('./pages/Ventas'));
+const Presupuestos = lazy(() => import('./pages/Presupuestos'));
+const Pedidos = lazy(() => import('./pages/Pedidos'));
+const PedidosAFacturar = lazy(() => import('./pages/PedidosAFacturar'));
+const Remitos = lazy(() => import('./pages/Remitos'));
+const Comprobantes = lazy(() => import('./pages/Comprobantes'));
+const Facturas = lazy(() => import('./pages/Facturas'));
+const Proveedores = lazy(() => import('./pages/Proveedores'));
+const Pagos = lazy(() => import('./pages/Pagos'));
+const OrdenesCompra = lazy(() => import('./pages/OrdenesCompra'));
+const RemitosCompra = lazy(() => import('./pages/RemitosCompra'));
+const ComprobantesProveedor = lazy(() => import('./pages/ComprobantesProveedor'));
+const CuentaCorriente = lazy(() => import('./pages/CuentaCorriente'));
+const CuentaCorrienteProveedores = lazy(() => import('./pages/CuentaCorrienteProveedores'));
+const Movimientos = lazy(() => import('./pages/Movimientos'));
+const Reportes = lazy(() => import('./pages/Reportes'));
+const Tesoreria = lazy(() => import('./pages/Tesoreria'));
+const Comisiones = lazy(() => import('./pages/Comisiones'));
+const Auditoria = lazy(() => import('./pages/Auditoria'));
+const Configuracion = lazy(() => import('./pages/Configuracion'));
+const Login = lazy(() => import('./pages/Login'));
+
+const AppLoader = ({ message = 'Cargando módulo...' }) => (
+  <div className="flex min-h-screen items-center justify-center bg-base-light dark:bg-slate-950">
+    <div className="flex flex-col items-center gap-4">
+      <div className="h-12 w-12 animate-spin rounded-full border-4 border-sky-600 border-t-transparent dark:border-indigo-500 dark:border-t-transparent"></div>
+      <p className="font-medium text-pastel-muted dark:text-slate-400">{message}</p>
+    </div>
+  </div>
+);
 
 // Componente para proteger las rutas privadas
 const PrivateRoute = ({ children }) => {
@@ -48,22 +71,20 @@ function AppRoutes() {
   // Solo mostramos el loader de datos si el usuario está logueado
   if (currentUser && loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-base-light dark:bg-slate-950">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-sky-600 border-t-transparent dark:border-indigo-500 dark:border-t-transparent"></div>
-          <p className="text-pastel-muted dark:text-slate-400 font-medium">Conectando con la base de datos...</p>
-        </div>
-      </div>
+      <AppLoader message="Conectando con la base de datos..." />
     );
   }
 
   return (
-    <Routes>
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+    <Suspense fallback={<AppLoader />}>
+      <Routes>
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       
       <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       <Route path="/clientes" element={<PrivateRoute><Clientes /></PrivateRoute>} />
       <Route path="/productos" element={<PrivateRoute><Productos /></PrivateRoute>} />
+      <Route path="/stock-kardex" element={<PrivateRoute><StockKardex /></PrivateRoute>} />
+      <Route path="/maestros" element={<PrivateRoute><Maestros /></PrivateRoute>} />
       <Route path="/ventas" element={<PrivateRoute><Ventas /></PrivateRoute>} />
       <Route path="/presupuestos" element={<PrivateRoute><Presupuestos /></PrivateRoute>} />
       <Route path="/pedidos" element={<PrivateRoute><Pedidos /></PrivateRoute>} />
@@ -72,10 +93,40 @@ function AppRoutes() {
       <Route path="/comprobantes" element={<PrivateRoute><Comprobantes /></PrivateRoute>} />
       <Route path="/facturas" element={<PrivateRoute><Facturas /></PrivateRoute>} />
       <Route path="/proveedores" element={<PrivateRoute><Proveedores /></PrivateRoute>} />
+      <Route path="/ordenes-compra" element={<PrivateRoute><OrdenesCompra /></PrivateRoute>} />
+      <Route path="/remitos-compra" element={<PrivateRoute><RemitosCompra /></PrivateRoute>} />
+      <Route path="/comprobantes-proveedor" element={<PrivateRoute><ComprobantesProveedor /></PrivateRoute>} />
       <Route path="/pagos" element={<PrivateRoute><Pagos /></PrivateRoute>} />
+      <Route path="/cuenta-corriente" element={<PrivateRoute><CuentaCorriente /></PrivateRoute>} />
+      <Route path="/cuenta-corriente-proveedores" element={<PrivateRoute><CuentaCorrienteProveedores /></PrivateRoute>} />
       <Route path="/movimientos" element={<PrivateRoute><Movimientos /></PrivateRoute>} />
-      <Route path="/configuracion" element={<PrivateRoute><Configuracion /></PrivateRoute>} />
-    </Routes>
+      <Route path="/reportes" element={<PrivateRoute><Reportes /></PrivateRoute>} />
+      <Route path="/tesoreria" element={<PrivateRoute><Tesoreria /></PrivateRoute>} />
+      <Route path="/comisiones" element={<PrivateRoute><Comisiones /></PrivateRoute>} />
+      <Route path="/auditoria" element={<PrivateRoute><Auditoria /></PrivateRoute>} />
+        <Route path="/configuracion" element={<PrivateRoute><Configuracion /></PrivateRoute>} />
+      </Routes>
+    </Suspense>
+  );
+}
+
+function AppDataShell() {
+  const { currentUser } = useAuth();
+  const { loading: permissionsLoading } = usePermissions();
+
+  if (currentUser && permissionsLoading) {
+    return (
+      <AppLoader message="Validando permisos..." />
+    );
+  }
+
+  return (
+    <DataProvider>
+      <BrowserRouter>
+        <Toaster position="top-right" richColors />
+        <AppRoutes />
+      </BrowserRouter>
+    </DataProvider>
   );
 }
 
@@ -83,12 +134,9 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <DataProvider>
-          <BrowserRouter>
-            <Toaster position="top-right" richColors />
-            <AppRoutes />
-          </BrowserRouter>
-        </DataProvider>
+        <PermissionsProvider>
+          <AppDataShell />
+        </PermissionsProvider>
       </AuthProvider>
     </ThemeProvider>
   );
