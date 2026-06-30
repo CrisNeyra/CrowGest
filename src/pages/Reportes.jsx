@@ -12,8 +12,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 
 const loadExportTools = async () => {
@@ -652,10 +651,8 @@ export default function Reportes() {
   };
 
   return (
-    <Layout>
-      <Header title="Reportes" subtitle="Ventas, compras, deuda, stock y movimientos" />
-
-      <div className="space-y-6 p-6">
+    <PageShell title="Reportes">
+      <div className="space-y-6">
         <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {REPORT_TYPES.map((report) => {
             const Icon = report.icon;
@@ -877,6 +874,6 @@ export default function Reportes() {
           )}
         </section>
       </div>
-    </Layout>
+    </PageShell>
   );
 }

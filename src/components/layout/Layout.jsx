@@ -1,22 +1,21 @@
-import { useState } from 'react';
-import Sidebar from './Sidebar';
+import TopBar from './TopBar';
+import ModuleNav from './ModuleNav';
+import SubNav from './SubNav';
+import Breadcrumb from './Breadcrumb';
 import { useTheme } from '../../context/ThemeContext';
 
-export default function Layout({ children }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+export default function Layout({ children, title }) {
   const { isDark } = useTheme();
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-slate-950' : 'bg-base-light'} transition-colors`}>
-      <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
-
-      <main
-        className={`min-h-screen transition-all duration-300 ${
-          sidebarOpen ? 'ml-64' : 'ml-20'
-        }`}
-      >
-        <div className="min-h-screen">{children}</div>
-      </main>
+      <div className="sticky top-0 z-40">
+        <TopBar />
+        <ModuleNav />
+        <SubNav />
+      </div>
+      <Breadcrumb title={title} />
+      <main className="min-h-[calc(100vh-12rem)]">{children}</main>
     </div>
   );
 }

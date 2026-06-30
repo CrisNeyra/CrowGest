@@ -5,8 +5,7 @@ import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import PurchaseItemsModal from '../components/compras/PurchaseItemsModal';
 import RecepcionModal from '../components/compras/RecepcionModal';
 import { useData } from '../context/DataContext';
@@ -161,9 +160,7 @@ export default function OrdenesCompra() {
   };
 
   return (
-    <Layout>
-      <Header title="Compras" subtitle="Órdenes de compra y recepción de mercadería" />
-
+    <PageShell title="Compras">
       <div className="mx-6 mt-4 rounded-xl border border-sky-200/60 bg-sky-50/80 px-4 py-3 text-sm text-sky-900 dark:border-sky-900/40 dark:bg-sky-950/30 dark:text-sky-200">
         Flujo: <strong>Alta OC</strong> → <strong>Autorización</strong> (requiere permiso) →{' '}
         <strong>Recepción</strong> (suma stock).
@@ -399,6 +396,6 @@ export default function OrdenesCompra() {
         orden={recepcionTarget}
         onSubmit={handleRecepcion}
       />
-    </Layout>
+    </PageShell>
   );
 }

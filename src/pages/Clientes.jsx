@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Edit, Trash2, Mail, Phone, MapPin, X } from 'lucide-react';
+import { Search, Edit, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
+import FilterBar from '../components/ui/FilterBar';
+import DataTable from '../components/ui/DataTable';
 import { useData } from '../context/DataContext';
 
 export default function Clientes() {
@@ -65,106 +66,90 @@ export default function Clientes() {
     }
   };
 
-  return (
-    <Layout>
-      <Header title="Clientes" subtitle="Gestión de clientes del negocio" />
+  const columns = [
+    {
+      key: 'nombre',
+      header: 'Cliente',
+      render: (c) => (
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-cg-primary/15 text-xs font-bold text-cg-primaryDark dark:bg-indigo-500/20 dark:text-indigo-300">
+            {c.nombre?.charAt(0).toUpperCase()}
+          </span>
+          <span className="font-medium">{c.nombre}</span>
+        </div>
+      ),
+    },
+    { key: 'email', header: 'Email', render: (c) => c.email || '-' },
+    { key: 'telefono', header: 'Teléfono', render: (c) => c.telefono || '-' },
+    { key: 'direccion', header: 'Dirección', render: (c) => c.direccion || '-' },
+    {
+      key: 'saldo',
+      header: 'Saldo',
+      align: 'right',
+      render: (c) => (
+        <span
+          className={`font-semibold ${
+            c.saldo > 0
+              ? 'text-amber-600 dark:text-amber-400'
+              : c.saldo < 0
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-cg-muted'
+          }`}
+        >
+          ${Math.abs(c.saldo || 0).toLocaleString()}
+          {c.saldo > 0 ? ' (debe)' : c.saldo < 0 ? ' (a favor)' : ''}
+        </span>
+      ),
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'center',
+      render: (c) => (
+        <div className="flex items-center justify-center gap-1">
+          <button
+            onClick={() => handleEdit(c)}
+            className="rounded-md p-1.5 text-cg-muted transition hover:bg-cg-primary/10 hover:text-cg-primaryDark dark:hover:bg-slate-700"
+            title="Editar"
+          >
+            <Edit size={16} />
+          </button>
+          <button
+            onClick={() => handleDelete(c.id)}
+            className="rounded-md p-1.5 text-cg-muted transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+            title="Eliminar"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      ),
+    },
+  ];
 
-      <div className="p-6">
-        <div className="flex flex-col sm:flex-row gap-4 justify-between mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-pastel-muted dark:text-slate-500" size={20} />
+  return (
+    <PageShell title="Clientes">
+      <FilterBar onNew={() => setShowModal(true)} newLabel="Nuevo">
+        <FilterBar.Group label="Buscar por" className="sm:max-w-md">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-cg-muted" size={18} />
             <input
               type="text"
-              placeholder="Buscar clientes..."
+              placeholder="Nombre o email del cliente..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="input-field pl-10"
             />
           </div>
-          <button onClick={() => setShowModal(true)} className="btn-primary">
-            <Plus size={18} />
-            Nuevo Cliente
-          </button>
-        </div>
+        </FilterBar.Group>
+      </FilterBar>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredClientes.map((cliente, index) => (
-            <motion.div
-              key={cliente.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="card-hover"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">
-                      {cliente.nombre.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-pastel-ink dark:text-slate-100">{cliente.nombre}</h3>
-                    <p className="text-xs text-pastel-muted dark:text-slate-400">
-                      Cliente desde {new Date(cliente.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => handleEdit(cliente)}
-                    className="p-2 rounded-lg text-pastel-muted hover:bg-pastel-mist hover:text-pastel-ink transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-                  >
-                    <Edit size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(cliente.id)}
-                    className="p-2 rounded-lg text-pastel-muted hover:bg-red-50 hover:text-red-600 transition-colors dark:text-slate-400 dark:hover:bg-red-900/30 dark:hover:text-red-400"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
+      <DataTable
+        columns={columns}
+        rows={filteredClientes}
+        emptyMessage="No se encontraron clientes"
+      />
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-pastel-muted dark:text-slate-400">
-                  <Mail size={16} />
-                  <span className="text-sm">{cliente.email}</span>
-                </div>
-                <div className="flex items-center gap-2 text-pastel-muted dark:text-slate-400">
-                  <Phone size={16} />
-                  <span className="text-sm">{cliente.telefono}</span>
-                </div>
-                <div className="flex items-center gap-2 text-pastel-muted dark:text-slate-400">
-                  <MapPin size={16} />
-                  <span className="text-sm">{cliente.direccion}</span>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-edge-light dark:border-slate-800">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-pastel-muted dark:text-slate-400">Saldo</span>
-                  <span className={`font-semibold ${
-                    cliente.saldo > 0 ? 'text-amber-600 dark:text-amber-400' :
-                    cliente.saldo < 0 ? 'text-emerald-600 dark:text-emerald-400' :
-                    'text-pastel-muted dark:text-slate-400'
-                  }`}>
-                    ${Math.abs(cliente.saldo || 0).toLocaleString()}
-                    {cliente.saldo > 0 ? ' (debe)' : cliente.saldo < 0 ? ' (a favor)' : ''}
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {filteredClientes.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-pastel-muted dark:text-slate-500">No se encontraron clientes</p>
-          </div>
-        )}
-
-        <AnimatePresence>
+      <AnimatePresence>
           {showModal && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -246,7 +231,6 @@ export default function Clientes() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-    </Layout>
+    </PageShell>
   );
 }

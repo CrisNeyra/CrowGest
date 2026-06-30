@@ -65,7 +65,7 @@ export default function FacturasHistorialPanel({ onGoFiscal }) {
   };
 
   const generateInvoicePDF = async (factura) => {
-    const { jsPDF } = await loadExportTools();
+    const { jsPDF, autoTable } = await loadExportTools();
     const cliente = clientes.find((c) => c.id === factura.clienteId);
     const doc = new jsPDF();
     doc.setFontSize(20);
@@ -74,25 +74,25 @@ export default function FacturasHistorialPanel({ onGoFiscal }) {
     doc.text(`Nº: ${factura.numero}`, 14, 30);
     doc.text(`Fecha: ${new Date(factura.fecha).toLocaleDateString()}`, 14, 35);
     doc.text(`Cliente: ${cliente?.nombre || 'Consumidor Final'}`, 14, 42);
-    const tableData = factura.items.map((item) => [
+    const tableData = (factura.items || []).map((item) => [
       item.nombre || 'Producto',
       item.cantidad.toString(),
-      `$${item.precioUnitario.toLocaleString()}`,
-      `$${item.subtotal.toLocaleString()}`,
+      `$${(item.precioUnitario ?? 0).toLocaleString()}`,
+      `$${(item.subtotal ?? 0).toLocaleString()}`,
     ]);
-    doc.autoTable({
+    autoTable(doc, {
       startY: 50,
       head: [['Producto', 'Cantidad', 'Precio Unit.', 'Subtotal']],
       body: tableData,
     });
-    const finalY = doc.lastAutoTable.finalY || 50;
-    doc.text(`Total: $${factura.total.toLocaleString()}`, 140, finalY + 15);
+    const finalY = doc.lastAutoTable?.finalY || 50;
+    doc.text(`Total: $${(factura.total ?? 0).toLocaleString()}`, 140, finalY + 15);
     doc.save(`Factura_${factura.numero}.pdf`);
     toast.success(`Factura ${factura.numero} descargada`);
   };
 
   const exportToPDF = async () => {
-    const { jsPDF } = await loadExportTools();
+    const { jsPDF, autoTable } = await loadExportTools();
     const doc = new jsPDF();
     doc.text('Reporte de Facturas - Gest Crow', 14, 15);
     const tableData = filteredFacturas.map((factura) => {
@@ -101,11 +101,11 @@ export default function FacturasHistorialPanel({ onGoFiscal }) {
         factura.numero,
         cliente?.nombre || 'Desconocido',
         new Date(factura.fecha).toLocaleDateString(),
-        `$${factura.total.toLocaleString()}`,
+        `$${(factura.total ?? 0).toLocaleString()}`,
         factura.estado,
       ];
     });
-    doc.autoTable({ head: [['Número', 'Cliente', 'Fecha', 'Total', 'Estado']], body: tableData, startY: 25 });
+    autoTable(doc, { head: [['Número', 'Cliente', 'Fecha', 'Total', 'Estado']], body: tableData, startY: 25 });
     doc.save('facturas_gestcrow.pdf');
     toast.success('Reporte PDF exportado');
   };
@@ -202,7 +202,7 @@ export default function FacturasHistorialPanel({ onGoFiscal }) {
                       {new Date(factura.fecha).toLocaleDateString('es-AR')}
                     </td>
                     <td className="p-4 text-right font-medium">${factura.total.toLocaleString()}</td>
-                    <td className="p-4 text-right">${factura.saldoPendiente.toLocaleString()}</td>
+                    <td className="p-4 text-right">${(factura.saldoPendiente ?? 0).toLocaleString()}</td>
                     <td className="p-4 text-center">
                       <span className={
                         factura.estado === 'pagada' ? 'badge-success' :

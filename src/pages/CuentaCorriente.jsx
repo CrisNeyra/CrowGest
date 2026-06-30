@@ -16,8 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { loadExportTools } from '../utils/exportTools';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 import {
   buildMovimientosCliente,
@@ -184,13 +183,8 @@ export default function CuentaCorriente() {
   };
 
   return (
-    <Layout>
-      <Header
-        title="Cuenta Corriente"
-        subtitle="Saldos, comprobantes pendientes, morosidad y extracto por cliente"
-      />
-
-      <div className="p-6">
+    <PageShell title="Cuenta Corriente">
+      <div>
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -743,6 +737,6 @@ export default function CuentaCorriente() {
           </motion.div>
         )}
       </AnimatePresence>
-    </Layout>
+    </PageShell>
   );
 }

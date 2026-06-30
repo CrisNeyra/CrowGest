@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, ChevronDown, ChevronUp, Package, ShoppingCart, Users, Wallet } from 'lucide-react';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import SalesOverviewChart from '../components/dashboard/SalesOverviewChart';
 import StatCard from '../components/dashboard/StatCard';
 import TopProductsChart from '../components/dashboard/TopProductsChart';
@@ -125,10 +124,8 @@ export default function Dashboard() {
     }));
 
   return (
-    <Layout>
-      <Header title="Menu Principal" subtitle="Resumen general del negocio" />
-
-      <div className="space-y-6 p-6">
+    <PageShell title="Menu Principal">
+      <div className="space-y-6">
         <div>
           <h2 className={`text-xl font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>
             Menu Principal - Resumen general del negocio
@@ -312,7 +309,7 @@ export default function Dashboard() {
           </CollapsiblePanel>
         </div>
       </div>
-    </Layout>
+    </PageShell>
   );
 }
 

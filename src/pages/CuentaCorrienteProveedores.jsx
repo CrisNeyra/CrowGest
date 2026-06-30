@@ -16,8 +16,7 @@ import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 import { usePermissions } from '../context/PermissionsContext';
 import { DIAS_PLAZO_DEFAULT } from '../utils/ctaCte';
@@ -191,13 +190,8 @@ export default function CuentaCorrienteProveedores() {
   };
 
   return (
-    <Layout>
-      <Header
-        title="Cuenta Corriente Proveedores"
-        subtitle="Deuda, comprobantes pendientes, morosidad y extracto por proveedor"
-      />
-
-      <div className="p-6">
+    <PageShell title="Cuenta Corriente Proveedores">
+      <div>
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -612,7 +606,7 @@ export default function CuentaCorrienteProveedores() {
           </motion.div>
         )}
       </AnimatePresence>
-    </Layout>
+    </PageShell>
   );
 }
 

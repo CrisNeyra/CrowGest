@@ -2,8 +2,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Award, Download, FileText, Search, TrendingUp, Users, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 import {
   calcularComisionesPorVendedor,
@@ -118,13 +117,8 @@ export default function Comisiones() {
   };
 
   return (
-    <Layout>
-      <Header
-        title="Comisiones"
-        subtitle="Comisiones por vendedor sobre facturación o cobranzas"
-      />
-
-      <div className="space-y-6 p-6">
+    <PageShell title="Comisiones">
+      <div className="space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <KpiCard
             title="Base de cálculo"
@@ -306,7 +300,7 @@ export default function Comisiones() {
           </div>
         </section>
       </div>
-    </Layout>
+    </PageShell>
   );
 }
 

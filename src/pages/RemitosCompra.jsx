@@ -5,8 +5,7 @@ import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 import { usePermissions } from '../context/PermissionsContext';
 
@@ -134,9 +133,7 @@ export default function RemitosCompra() {
   };
 
   return (
-    <Layout>
-      <Header title="Remitos de compra" subtitle="Recepciones de proveedores vinculadas a OC y comprobantes" />
-
+    <PageShell title="Remitos de compra">
       <div className="mx-6 mt-4 rounded-xl border border-sky-200/60 bg-sky-50/80 px-4 py-3 text-sm text-sky-900 dark:border-sky-900/40 dark:bg-sky-950/30 dark:text-sky-200">
         Los remitos se generan al registrar una recepción desde <strong>Compras</strong>. Cada remito conserva el
         número interno, el número del proveedor y el comprobante proveedor asociado.
@@ -350,6 +347,6 @@ export default function RemitosCompra() {
           </motion.div>
         )}
       </AnimatePresence>
-    </Layout>
+    </PageShell>
   );
 }

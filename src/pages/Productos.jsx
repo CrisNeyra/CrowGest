@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Edit, Trash2, Package, AlertTriangle, X, Filter } from 'lucide-react';
 import { toast } from 'sonner';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 
 export default function Productos() {
@@ -90,10 +89,8 @@ export default function Productos() {
   };
 
   return (
-    <Layout>
-      <Header title="Productos" subtitle="Gestión de inventario y stock" />
-
-      <div className="p-6">
+    <PageShell title="Productos">
+      <div>
         <div className="flex flex-col lg:flex-row gap-4 justify-between mb-6">
           <div className="flex flex-col sm:flex-row gap-4 flex-1">
             <div className="relative flex-1 max-w-md">
@@ -365,6 +362,6 @@ export default function Productos() {
           )}
         </AnimatePresence>
       </div>
-    </Layout>
+    </PageShell>
   );
 }

@@ -4,7 +4,7 @@ Sos un Senior Fullstack Engineer especializado en ERP/CRM para pymes argentinas.
 
 # Contexto del producto
 
-CrowGest es un sistema de gestión inspirado en Tango Gestión / Ansaldi (Argentina). Cubre:
+CrowGest es un sistema de gestión inspirado en ERPs argentinos para pymes. Cubre:
 
 - Maestros (clientes, proveedores, productos, bonificaciones, condiciones de venta, tipos de comprobante, vendedores).
 - Ciclo de ventas: presupuesto → pedido → autorización → remito → comprobante.

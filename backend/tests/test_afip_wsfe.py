@@ -13,6 +13,7 @@ from app.modules.ventas.afip_service import AfipEmissionRequest, AfipService
 from app.modules.ventas.afip_wsfe import (
     WsfeCaeResult,
     codigo_comprobante_afip,
+    desglosar_iva_21,
 )
 
 
@@ -74,3 +75,19 @@ def test_codigo_comprobante_afip_mapea_letras() -> None:
 def test_codigo_comprobante_afip_rechaza_desconocido() -> None:
     with pytest.raises(HTTPException):
         codigo_comprobante_afip("XX", "Z")
+
+
+def test_desglosar_iva_21_sin_float() -> None:
+    total, neto, iva = desglosar_iva_21(Decimal("1210.00"))
+    assert total == Decimal("1210.00")
+    assert neto == Decimal("1000.00")
+    assert iva == Decimal("210.00")
+    assert neto + iva == total
+
+
+def test_desglosar_iva_21_redondeo_centavos() -> None:
+    total, neto, iva = desglosar_iva_21(Decimal("100.00"))
+    assert neto + iva == total
+    assert total.as_tuple().exponent == -2
+    assert neto.as_tuple().exponent == -2
+    assert iva.as_tuple().exponent == -2

@@ -2,8 +2,7 @@ import { Fragment, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search, CreditCard, ArrowUpRight, ArrowDownRight, Filter, FileText, Download, RotateCcw, AlertTriangle, X } from 'lucide-react';
 import { toast } from 'sonner';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 import { usePermissions } from '../context/PermissionsContext';
 
@@ -107,10 +106,8 @@ export default function Pagos() {
   };
 
   return (
-    <Layout>
-      <Header title="Pagos" subtitle="Historial de cobros y pagos" />
-
-      <div className="p-6">
+    <PageShell title="Pagos">
+      <div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -415,6 +412,6 @@ export default function Pagos() {
           </motion.div>
         )}
       </AnimatePresence>
-    </Layout>
+    </PageShell>
   );
 }

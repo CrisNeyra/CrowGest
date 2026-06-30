@@ -5,8 +5,7 @@ import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 
 export default function Ventas() {
@@ -133,10 +132,8 @@ export default function Ventas() {
   };
 
   return (
-    <Layout>
-      <Header title="Ventas" subtitle="Registro de ventas realizadas" />
-
-      <div className="p-6">
+    <PageShell title="Ventas">
+      <div>
         <div className="flex flex-col sm:flex-row gap-4 justify-between mb-6">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-pastel-muted dark:text-slate-500" size={20} />
@@ -382,6 +379,6 @@ export default function Ventas() {
           )}
         </AnimatePresence>
       </div>
-    </Layout>
+    </PageShell>
   );
 }

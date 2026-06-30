@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Save, RefreshCw, Database, Palette, Bell, Shield, UploadCloud, Car } from 'lucide-react';
 import { toast } from 'sonner';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 import { usePermissions } from '../context/PermissionsContext';
 import { useConfirm } from '../components/ui/ConfirmDialog';
@@ -43,10 +42,8 @@ export default function Configuracion() {
   };
 
   return (
-    <Layout>
-      <Header title="Configuración" subtitle="Ajustes del sistema" />
-
-      <div className="max-w-4xl p-6">
+    <PageShell title="Configuración">
+      <div className="max-w-4xl">
         <div className="space-y-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -351,6 +348,6 @@ export default function Configuracion() {
           </motion.div>
         </div>
       </div>
-    </Layout>
+    </PageShell>
   );
 }

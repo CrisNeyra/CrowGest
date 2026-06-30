@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Edit, Trash2, Mail, Phone, MapPin, X, DollarSign } from 'lucide-react';
+import { Search, Edit, Trash2, Mail, Phone, MapPin, X, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
+import FilterBar from '../components/ui/FilterBar';
 import { useData } from '../context/DataContext';
 
 export default function Proveedores() {
@@ -107,10 +107,8 @@ export default function Proveedores() {
   };
 
   return (
-    <Layout>
-      <Header title="Proveedores" subtitle="Gestión de proveedores y deudas" />
-
-      <div className="p-6">
+    <PageShell title="Proveedores">
+      <div>
         <div className="card mb-6 bg-gradient-to-r from-rose-500/5 to-rose-600/10 border-rose-200/60 dark:border-rose-900/40">
           <div className="flex items-center justify-between">
             <div>
@@ -123,20 +121,21 @@ export default function Proveedores() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-between mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-pastel-muted dark:text-slate-500" size={20} />
-            <input
-              type="text"
-              placeholder="Buscar proveedores..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-field pl-10"
-            />
-          </div>
-          <button onClick={() => setShowModal(true)} className="btn-primary">
-            <Plus size={18} /> Nuevo Proveedor
-          </button>
+        <div className="mb-6">
+          <FilterBar onNew={() => setShowModal(true)} newLabel="Nuevo">
+            <FilterBar.Group label="Buscar por" className="sm:max-w-md">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-cg-muted" size={18} />
+                <input
+                  type="text"
+                  placeholder="Nombre del proveedor..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="input-field pl-10"
+                />
+              </div>
+            </FilterBar.Group>
+          </FilterBar>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -447,6 +446,6 @@ export default function Proveedores() {
           )}
         </AnimatePresence>
       </div>
-    </Layout>
+    </PageShell>
   );
 }

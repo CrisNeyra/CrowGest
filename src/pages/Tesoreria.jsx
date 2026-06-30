@@ -17,8 +17,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import TesoreriaModal from '../components/tesoreria/TesoreriaModal';
 import { useData } from '../context/DataContext';
 import { usePermissions } from '../context/PermissionsContext';
@@ -440,13 +439,8 @@ export default function Tesoreria() {
   };
 
   return (
-    <Layout>
-      <Header
-        title="Tesorería"
-        subtitle="Caja, bancos, recibos, órdenes de pago y movimientos financieros"
-      />
-
-      <div className="space-y-6 p-6">
+    <PageShell title="Tesorería">
+      <div className="space-y-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard title="Saldo total" value={formatCurrency(stats.saldoTotal)} tone="neutral" />
           <KpiCard title="Ingresos del mes" value={formatCurrency(stats.ingresosMes)} tone="positive" />
@@ -1180,7 +1174,7 @@ export default function Tesoreria() {
           </div>
         )}
       </TesoreriaModal>
-    </Layout>
+    </PageShell>
   );
 }
 

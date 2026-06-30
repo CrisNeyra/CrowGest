@@ -18,6 +18,7 @@ import base64
 import secrets
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from decimal import ROUND_HALF_UP, Decimal
 
 from app.core.exceptions import bad_request
 from app.core.settings import Settings
@@ -40,6 +41,14 @@ TIPO_AFIP_POR_LETRA = {
     ("NC", "B"): 8,
     ("NC", "C"): 13,
 }
+
+
+def desglosar_iva_21(total: Decimal) -> tuple[Decimal, Decimal, Decimal]:
+    """Total con IVA incluido → (total, neto gravado, IVA 21%)."""
+    total_q = total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    neto = (total_q / Decimal("1.21")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    iva = (total_q - neto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return total_q, neto, iva
 
 
 def codigo_comprobante_afip(tipo_comprobante: str, letra: str) -> int:
@@ -149,7 +158,7 @@ class WsfeClient:
         tipo_comprobante: str,
         letra: str,
         punto_venta: int,
-        total,
+        total: Decimal,
         numero_fiscal: int,
     ) -> WsfeCaeResult:
         try:
@@ -167,9 +176,7 @@ class WsfeClient:
 
         client = Client(self._settings.afip_wsfe_url)
         auth = {"Token": token, "Sign": sign, "Cuit": cuit}
-        total_float = float(total)
-        neto = round(total_float / 1.21, 2)
-        iva = round(total_float - neto, 2)
+        total_q, neto, iva = desglosar_iva_21(total)
 
         detalle = {
             "Concepto": 1,
@@ -178,7 +185,7 @@ class WsfeClient:
             "CbteDesde": numero_fiscal,
             "CbteHasta": numero_fiscal,
             "CbteFch": hoy,
-            "ImpTotal": round(total_float, 2),
+            "ImpTotal": total_q,
             "ImpTotConc": 0,
             "ImpNeto": neto,
             "ImpOpEx": 0,

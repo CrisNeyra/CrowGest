@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, Filter, Search, ShieldCheck, User } from 'lucide-react';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 
 const ACTION_LABELS = {
@@ -93,10 +92,8 @@ export default function Auditoria() {
   const usersCount = new Set(auditLog.map((entry) => entry.userEmail).filter(Boolean)).size;
 
   return (
-    <Layout>
-      <Header title="Auditoría" subtitle="Trazabilidad de operaciones críticas del sistema" />
-
-      <div className="space-y-6 p-6">
+    <PageShell title="Auditoría">
+      <div className="space-y-6">
         <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Kpi title="Eventos registrados" value={auditLog.length.toLocaleString('es-AR')} icon={ShieldCheck} />
           <Kpi title="Eventos de hoy" value={todayCount.toLocaleString('es-AR')} icon={Activity} />
@@ -187,7 +184,7 @@ export default function Auditoria() {
           )}
         </section>
       </div>
-    </Layout>
+    </PageShell>
   );
 }
 

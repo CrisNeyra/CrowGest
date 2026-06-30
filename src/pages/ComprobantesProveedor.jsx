@@ -2,8 +2,7 @@ import { Fragment, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, Download, Edit, FileText, Plus, Search, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 import { usePermissions } from '../context/PermissionsContext';
 
@@ -246,9 +245,7 @@ export default function ComprobantesProveedor() {
   };
 
   return (
-    <Layout>
-      <Header title="Comprobantes proveedor" subtitle="Facturas, notas y documentos comerciales de proveedores" />
-
+    <PageShell title="Comprobantes proveedor">
       <div className="mx-6 mt-4 rounded-xl border border-sky-200/60 bg-sky-50/80 px-4 py-3 text-sm text-sky-900 dark:border-sky-900/40 dark:bg-sky-950/30 dark:text-sky-200">
         Los comprobantes creados desde una recepción pueden completarse con datos fiscales. Para anular uno que viene
         de remito, usá <strong>Rem. Compra</strong> para revertir stock correctamente.
@@ -713,6 +710,6 @@ export default function ComprobantesProveedor() {
           </motion.div>
         )}
       </AnimatePresence>
-    </Layout>
+    </PageShell>
   );
 }

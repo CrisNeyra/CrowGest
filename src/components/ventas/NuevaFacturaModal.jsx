@@ -14,20 +14,21 @@ import {
 
 const IIBB_PCT_DEFAULT = 3;
 
-function buildInitialState(initialData = {}) {
+function buildInitialState(initialData) {
+  const data = initialData ?? {};
   return {
-    tipoComprobante: initialData.tipoComprobante || 'FB',
-    clienteId: initialData.clienteId || '',
-    sucursal: initialData.sucursal || 'Central',
-    formaPago: initialData.formaPago || 'cuenta_corriente',
-    transporte: initialData.transporte || '',
-    pedidoId: initialData.pedidoId || '',
-    remitoId: initialData.remitoId || '',
-    condicionVentaId: initialData.condicionVentaId || '',
-    observaciones: initialData.observaciones || '',
-    descuentoGlobalPct: initialData.descuentoGlobalPct || 0,
-    iibbPct: initialData.iibbPct ?? IIBB_PCT_DEFAULT,
-    lineas: initialData.lineas?.length ? initialData.lineas : [lineaVacia()],
+    tipoComprobante: data.tipoComprobante || 'FB',
+    clienteId: data.clienteId || '',
+    sucursal: data.sucursal || 'Central',
+    formaPago: data.formaPago || 'cuenta_corriente',
+    transporte: data.transporte || '',
+    pedidoId: data.pedidoId || '',
+    remitoId: data.remitoId || '',
+    condicionVentaId: data.condicionVentaId || '',
+    observaciones: data.observaciones || '',
+    descuentoGlobalPct: data.descuentoGlobalPct || 0,
+    iibbPct: data.iibbPct ?? IIBB_PCT_DEFAULT,
+    lineas: data.lineas?.length ? data.lineas : [lineaVacia()],
   };
 }
 
@@ -144,7 +145,7 @@ export default function NuevaFacturaModal({ isOpen, onClose, initialData, onSucc
       return;
     }
 
-    const condicion = condicionesVenta.find((c) => c.id === form.condicionVentaId);
+    const condicion = (condicionesVenta || []).find((c) => c.id === form.condicionVentaId);
     setSaving(true);
     try {
       const result = await crearFacturaDesdeFormulario({
@@ -271,7 +272,7 @@ export default function NuevaFacturaModal({ isOpen, onClose, initialData, onSucc
                   className="select-field"
                 >
                   <option value="">Sin condición</option>
-                  {condicionesVenta.map((c) => (
+                  {(condicionesVenta || []).map((c) => (
                     <option key={c.id} value={c.id}>{c.nombre}</option>
                   ))}
                 </select>

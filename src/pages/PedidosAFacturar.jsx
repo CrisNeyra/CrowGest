@@ -2,8 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, FileText, Receipt, Plus, ShieldCheck, History } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 import { usePermissions } from '../context/PermissionsContext';
 import NuevaFacturaModal from '../components/ventas/NuevaFacturaModal';
@@ -78,19 +77,14 @@ export default function PedidosAFacturar() {
   };
 
   return (
-    <Layout>
-      <Header
-        title="A Facturar"
-        subtitle="Facturación de clientes — pendientes, historial y emisión fiscal"
-      />
-
+    <PageShell title="A Facturar">
       {!can('orders:invoice') && tab === 'pendientes' && (
-        <p className="mx-6 mt-4 rounded-xl border border-amber-200/60 bg-amber-50/80 px-4 py-2 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+        <p className="rounded-xl border border-amber-200/60 bg-amber-50/80 px-4 py-2 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
           Tu rol no puede generar facturas.
         </p>
       )}
 
-      <div className="p-6">
+      <div>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap gap-2">
             {TABS.map((t) => {
@@ -236,6 +230,6 @@ export default function PedidosAFacturar() {
         initialData={modalInitialData}
         onSuccess={() => changeTab('historial')}
       />
-    </Layout>
+    </PageShell>
   );
 }

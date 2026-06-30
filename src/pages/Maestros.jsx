@@ -13,8 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import {
@@ -161,13 +160,8 @@ export default function Maestros() {
   };
 
   return (
-    <Layout>
-      <Header
-        title="Vendedores"
-        subtitle="Vendedores, condiciones de venta, tipos de comprobante y bonificaciones"
-      />
-
-      <div className="space-y-6 p-6">
+    <PageShell title="Vendedores">
+      <div className="space-y-6">
         <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {Object.entries(MAESTROS).map(([key, maestro]) => {
             const TabIcon = iconByTab[key];
@@ -343,7 +337,7 @@ export default function Maestros() {
           </motion.div>
         )}
       </AnimatePresence>
-    </Layout>
+    </PageShell>
   );
 }
 

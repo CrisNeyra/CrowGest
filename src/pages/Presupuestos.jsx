@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, FileText, Download, ClipboardList, Ban, ArrowRightCircle } from 'lucide-react';
+import { Search, FileText, Download, ClipboardList, Ban, ArrowRightCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
+import FilterBar from '../components/ui/FilterBar';
 import DocumentItemsModal from '../components/ventas/DocumentItemsModal';
 import { useData } from '../context/DataContext';
 
@@ -131,46 +131,47 @@ export default function Presupuestos() {
   };
 
   return (
-    <Layout>
-      <Header title="Presupuestos" subtitle="Cotizaciones a clientes (sin impacto en stock)" />
-
-      <div className="p-6">
-        <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row">
-          <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative max-w-md flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-pastel-muted dark:text-slate-500" size={20} />
-              <input
-                type="text"
-                placeholder="Buscar presupuestos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="input-field pl-10"
-              />
-            </div>
-            <select
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
-              className="select-field max-w-[180px]"
-            >
-              <option value="todos">Todos los estados</option>
-              <option value="vigente">Vigente</option>
-              <option value="convertido">Convertido</option>
-              <option value="anulado">Anulado</option>
-            </select>
+    <PageShell
+      title="Presupuestos"
+      actions={
+        <>
+          <button type="button" onClick={exportToPDF} className="btn-secondary">
+            <FileText size={18} className="text-red-500" /> PDF
+          </button>
+          <button type="button" onClick={exportToExcel} className="btn-secondary">
+            <Download size={18} className="text-emerald-500" /> Excel
+          </button>
+        </>
+      }
+    >
+      <FilterBar onNew={() => setShowModal(true)} newLabel="Nuevo">
+        <FilterBar.Group label="Buscar por" className="sm:max-w-md">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-cg-muted" size={18} />
+            <input
+              type="text"
+              placeholder="Número o cliente..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input-field pl-10"
+            />
           </div>
-          <div className="flex gap-3">
-            <button type="button" onClick={exportToPDF} className="btn-secondary">
-              <FileText size={18} className="text-red-500" /> PDF
-            </button>
-            <button type="button" onClick={exportToExcel} className="btn-secondary">
-              <Download size={18} className="text-emerald-500" /> Excel
-            </button>
-            <button type="button" onClick={() => setShowModal(true)} className="btn-primary">
-              <Plus size={18} /> Nuevo Presupuesto
-            </button>
-          </div>
-        </div>
+        </FilterBar.Group>
+        <FilterBar.Group label="Estado" className="sm:max-w-[200px]">
+          <select
+            value={filtroEstado}
+            onChange={(e) => setFiltroEstado(e.target.value)}
+            className="select-field"
+          >
+            <option value="todos">Todos los estados</option>
+            <option value="vigente">Vigente</option>
+            <option value="convertido">Convertido</option>
+            <option value="anulado">Anulado</option>
+          </select>
+        </FilterBar.Group>
+      </FilterBar>
 
+      <div>
         <div className="card overflow-hidden p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -280,6 +281,6 @@ export default function Presupuestos() {
         bonificaciones={bonificaciones}
         onSubmit={handleCreate}
       />
-    </Layout>
+    </PageShell>
   );
 }

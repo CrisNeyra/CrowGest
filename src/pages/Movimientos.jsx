@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, ArrowLeftRight, TrendingUp, TrendingDown, Filter, FileText, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 import { loadExportTools } from '../utils/exportTools';
 
@@ -144,10 +143,8 @@ export default function Movimientos() {
   };
 
   return (
-    <Layout>
-      <Header title="Movimientos" subtitle="Historial de todas las operaciones" />
-
-      <div className="p-6">
+    <PageShell title="Movimientos">
+      <div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -307,6 +304,6 @@ export default function Movimientos() {
           </div>
         </div>
       </div>
-    </Layout>
+    </PageShell>
   );
 }

@@ -17,8 +17,7 @@ import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 import DesvincularRemitoModal from '../components/ventas/DesvincularRemitoModal';
 
@@ -244,13 +243,8 @@ export default function Remitos() {
   };
 
   return (
-    <Layout>
-      <Header
-        title="Remitos"
-        subtitle="Entrega de mercadería — el stock se descuenta al emitir"
-      />
-
-      <div className="p-6 space-y-8">
+    <PageShell title="Remitos">
+      <div className="space-y-8">
         <section>
           <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -665,6 +659,6 @@ export default function Remitos() {
             : false
         }
       />
-    </Layout>
+    </PageShell>
   );
 }

@@ -15,8 +15,7 @@ import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
+import PageShell from '../components/ui/PageShell';
 import { useData } from '../context/DataContext';
 import {
   buildKardexMovimientos,
@@ -144,13 +143,8 @@ export default function StockKardex() {
   };
 
   return (
-    <Layout>
-      <Header
-        title="Stock Avanzado"
-        subtitle="Kardex, valorización, reposición sugerida y ajustes manuales"
-      />
-
-      <div className="space-y-6 p-6">
+    <PageShell title="Stock Avanzado">
+      <div className="space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <KpiCard title="Productos" value={stats.productos.toLocaleString('es-AR')} tone="neutral" icon={Package} />
           <KpiCard title="Valorizado costo" value={formatCurrency(stats.valorizadoCosto)} tone="neutral" icon={TrendingUp} />
@@ -425,7 +419,7 @@ export default function StockKardex() {
           </motion.div>
         )}
       </AnimatePresence>
-    </Layout>
+    </PageShell>
   );
 }
 
