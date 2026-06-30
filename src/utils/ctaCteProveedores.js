@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { DIAS_PLAZO_DEFAULT } from './ctaCte';
+import { sumMoney, subMoney, addMoney } from './money';
 
 function parseFecha(iso) {
   if (!iso) return null;
@@ -49,13 +50,12 @@ export function getTotalesCtaCteProveedores(
   comprobantes,
   diasPlazo = DIAS_PLAZO_DEFAULT
 ) {
-  const deudaTotal = proveedores.reduce(
-    (acc, p) => acc + Math.max(0, p.saldoPendiente || 0),
-    0
+  const deudaTotal = sumMoney(
+    proveedores.map((p) => Math.max(0, p.saldoPendiente || 0))
   );
   const proveedoresConDeuda = proveedores.filter((p) => (p.saldoPendiente || 0) > 0).length;
   const pendientes = getComprobantesProveedorPendientes(comprobantes);
-  const totalPendiente = pendientes.reduce((acc, c) => acc + (c.saldoPendiente || 0), 0);
+  const totalPendiente = sumMoney(pendientes.map((c) => c.saldoPendiente || 0));
   const morosos = getComprobantesProveedorMorosos(comprobantes, diasPlazo);
 
   return {
@@ -64,7 +64,7 @@ export function getTotalesCtaCteProveedores(
     totalPendiente,
     cantPendientes: pendientes.length,
     cantMorosos: morosos.length,
-    totalMoroso: morosos.reduce((acc, c) => acc + (c.saldoPendiente || 0), 0),
+    totalMoroso: sumMoney(morosos.map((c) => c.saldoPendiente || 0)),
   };
 }
 
@@ -80,10 +80,10 @@ export function buildResumenProveedores(proveedores, comprobantes) {
         contacto: proveedor.contacto,
         email: proveedor.email,
         saldo: proveedor.saldoPendiente || 0,
-        saldoComprobantes: pendientes.reduce((acc, c) => acc + (c.saldoPendiente || 0), 0),
+        saldoComprobantes: sumMoney(pendientes.map((c) => c.saldoPendiente || 0)),
         cantPendientes: pendientes.length,
         cantMorosos: morosos.length,
-        montoMoroso: morosos.reduce((acc, c) => acc + (c.saldoPendiente || 0), 0),
+        montoMoroso: sumMoney(morosos.map((c) => c.saldoPendiente || 0)),
       };
     })
     .sort((a, b) => b.saldo - a.saldo);
@@ -131,7 +131,7 @@ export function buildMovimientosProveedor(proveedorId, comprobantes, pagos) {
 
   let saldoAcum = 0;
   return lineas.map((linea) => {
-    saldoAcum += linea.debe - linea.haber;
+    saldoAcum = subMoney(addMoney(saldoAcum, linea.debe), linea.haber);
     return { ...linea, saldo: saldoAcum };
   });
 }

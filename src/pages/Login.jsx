@@ -5,12 +5,13 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { toast } from 'sonner';
 import { auth } from '../firebase';
 import BrandLogo from '../components/layout/BrandLogo';
+import { DEMO_ACCESS } from '../config/demoAccess';
 
 const LOGIN_VIDEO_SRC = '/videos/login-background.mp4';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(DEMO_ACCESS.email);
+  const [password, setPassword] = useState(DEMO_ACCESS.password);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [videoVisible, setVideoVisible] = useState(true);
@@ -34,10 +35,10 @@ export default function Login() {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden>
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
         {videoVisible && (
           <video
-            className="absolute inset-0 h-full w-full object-cover opacity-70"
+            className="absolute left-1/2 top-1/2 h-full w-full min-h-[120%] min-w-[120%] -translate-x-1/2 -translate-y-[42%] scale-[1.22] object-cover object-[center_35%] opacity-70"
             autoPlay
             muted
             loop
@@ -55,6 +56,9 @@ export default function Login() {
               : 'bg-slate-950'
           }`}
         />
+        {videoVisible && (
+          <div className="absolute bottom-0 right-0 h-40 w-56 bg-gradient-to-tl from-slate-950 via-slate-950/95 to-transparent" />
+        )}
       </div>
 
       <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
@@ -68,6 +72,17 @@ export default function Login() {
             <h1 className="text-2xl font-bold text-slate-100">Bienvenido a Gest Crow</h1>
             <p className="mt-1 text-sm font-medium tracking-wide text-slate-400">Management System</p>
             <p className="mt-3 text-sm text-slate-500">Ingresá tus credenciales</p>
+            <div className="mt-4 w-full rounded-xl border border-indigo-500/25 bg-indigo-500/10 px-4 py-3 text-left">
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-300">
+                Acceso demo
+              </p>
+              <p className="mt-1 text-sm text-slate-300">
+                Usuario: <span className="font-medium text-slate-100">{DEMO_ACCESS.email}</span>
+              </p>
+              <p className="text-sm text-slate-300">
+                Contraseña: <span className="font-medium text-slate-100">{DEMO_ACCESS.password}</span>
+              </p>
+            </div>
           </div>
 
           {error && (

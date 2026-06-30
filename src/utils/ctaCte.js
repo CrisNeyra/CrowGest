@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { etiquetaComprobante } from './comprobantesFiscales';
+import { sumMoney, subMoney, addMoney } from './money';
 
 export const DIAS_PLAZO_DEFAULT = 30;
 
@@ -58,18 +59,17 @@ export function getFacturasMorosas(facturas, diasPlazo = DIAS_PLAZO_DEFAULT) {
 }
 
 export function getTotalesCtaCte(clientes, facturas, diasPlazo = DIAS_PLAZO_DEFAULT) {
-  const saldoTotalClientes = clientes.reduce((acc, c) => {
-    const s = c.saldo || 0;
-    return s > 0 ? acc + s : acc;
-  }, 0);
+  const saldoTotalClientes = sumMoney(
+    clientes.map((c) => c.saldo || 0).filter((s) => s > 0)
+  );
 
   const clientesConDeuda = clientes.filter((c) => (c.saldo || 0) > 0).length;
 
   const pendientes = getFacturasPendientesCobro(facturas);
-  const totalSaldoFacturas = pendientes.reduce((acc, f) => acc + (f.saldoPendiente || 0), 0);
+  const totalSaldoFacturas = sumMoney(pendientes.map((f) => f.saldoPendiente || 0));
 
   const morosas = getFacturasMorosas(facturas, diasPlazo);
-  const totalMoroso = morosas.reduce((acc, f) => acc + (f.saldoPendiente || 0), 0);
+  const totalMoroso = sumMoney(morosas.map((f) => f.saldoPendiente || 0));
 
   const sinEmitirFiscal = pendientes.filter((f) => !f.cae).length;
 
@@ -97,10 +97,10 @@ export function buildResumenClientes(clientes, facturas) {
         email: cliente.email,
         telefono: cliente.telefono,
         saldo: cliente.saldo || 0,
-        saldoFacturas: pendientes.reduce((acc, f) => acc + (f.saldoPendiente || 0), 0),
+        saldoFacturas: sumMoney(pendientes.map((f) => f.saldoPendiente || 0)),
         cantPendientes: pendientes.length,
         cantMorosas: morosas.length,
-        montoMoroso: morosas.reduce((acc, f) => acc + (f.saldoPendiente || 0), 0),
+        montoMoroso: sumMoney(morosas.map((f) => f.saldoPendiente || 0)),
       };
     })
     .sort((a, b) => b.saldo - a.saldo);
@@ -165,7 +165,7 @@ export function buildMovimientosCliente(clienteId, facturas, pagos) {
 
   let saldoAcum = 0;
   return lineas.map((linea) => {
-    saldoAcum += linea.debe - linea.haber;
+    saldoAcum = subMoney(addMoney(saldoAcum, linea.debe), linea.haber);
     return { ...linea, saldo: saldoAcum };
   });
 }

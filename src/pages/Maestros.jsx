@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
+import { useConfirm } from '../components/ui/ConfirmDialog';
 import {
   BONIFICACION_APLICA_A,
   BONIFICACION_TIPOS,
@@ -35,6 +36,7 @@ const iconByTab = {
 
 export default function Maestros() {
   const data = useData();
+  const confirm = useConfirm();
   const [tab, setTab] = useState('vendedores');
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -119,7 +121,13 @@ export default function Maestros() {
   };
 
   const handleDelete = async (item) => {
-    if (!confirm(`¿Eliminar ${config.singular.toLowerCase()}?`)) return;
+    const ok = await confirm({
+      title: `Eliminar ${config.singular.toLowerCase()}`,
+      message: `¿Seguro que querés eliminar ${config.singular.toLowerCase()}?`,
+      danger: true,
+      confirmLabel: 'Eliminar',
+    });
+    if (!ok) return;
     try {
       await actions[tab].delete(item.id);
       toast.success('Registro eliminado');
@@ -155,7 +163,7 @@ export default function Maestros() {
   return (
     <Layout>
       <Header
-        title="Maestros Comerciales"
+        title="Vendedores"
         subtitle="Vendedores, condiciones de venta, tipos de comprobante y bonificaciones"
       />
 

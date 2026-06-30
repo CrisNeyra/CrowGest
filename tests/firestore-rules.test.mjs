@@ -115,7 +115,14 @@ describe('Firestore rules - roles operativos', () => {
     await assertSucceeds(setDoc(doc(db, 'facturas', 'factura-1'), { total: 1000 }));
     await assertSucceeds(setDoc(doc(db, 'pagos', 'pago-1'), { total: 1000 }));
     await assertSucceeds(setDoc(doc(db, 'importaciones_bancarias', 'imp-1'), { totalFilas: 1 }));
-    await assertSucceeds(setDoc(doc(db, 'audit_log', 'audit-1'), { action: 'test', createdAt: new Date() }));
+    await assertSucceeds(
+      setDoc(doc(db, 'audit_log', 'audit-1'), {
+        action: 'test',
+        entity: 'facturas',
+        userId: roles.admin,
+        createdAt: new Date(),
+      })
+    );
     await assertFails(deleteDoc(doc(db, 'audit_log', 'audit-1')));
     await assertSucceeds(deleteDoc(doc(db, 'pagos', 'pago-1')));
   });
@@ -132,7 +139,14 @@ describe('Firestore rules - roles operativos', () => {
     await assertFails(setDoc(doc(db, 'remitos', 'remito-vendedor'), { pedidoId: 'pedido-1' }));
     await assertFails(setDoc(doc(db, 'remitos_compra', 'remito-compra-vendedor'), { total: 1000 }));
     await assertFails(setDoc(doc(db, 'importaciones_bancarias', 'imp-vendedor'), { totalFilas: 1 }));
-    await assertSucceeds(setDoc(doc(db, 'audit_log', 'audit-vendedor'), { action: 'orders.create' }));
+    await assertSucceeds(
+      setDoc(doc(db, 'audit_log', 'audit-vendedor'), {
+        action: 'orders.create',
+        entity: 'pedidos',
+        userId: roles.vendedor,
+        createdAt: new Date(),
+      })
+    );
     await assertFails(updateDoc(doc(db, 'audit_log', 'audit-vendedor'), { action: 'tamper' }));
     await assertFails(setDoc(doc(db, 'productos', 'producto-vendedor'), { stock: 10 }));
   });
@@ -164,6 +178,47 @@ describe('Firestore rules - roles operativos', () => {
     await assertFails(setDoc(doc(db, 'productos', 'producto-tesoreria'), { stock: 10 }));
     await assertFails(setDoc(doc(db, 'ordenes_compra', 'oc-tesoreria'), { estado: 'authorized' }));
     await assertFails(setDoc(doc(db, 'remitos_compra', 'rc-tesoreria'), { total: 1000 }));
+  });
+
+  test('factura con CAE es inmutable en campos fiscales', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'facturas', 'factura-cae'), {
+        total: 1000,
+        cae: '12345678901234',
+        numeroFiscal: '00000001',
+        letra: 'B',
+        puntoVenta: 1,
+        saldoPendiente: 1000,
+        estado: 'pendiente',
+      });
+    });
+
+    const db = dbFor(roles.tesoreria);
+
+    // Cambiar el total de una factura con CAE debe fallar.
+    await assertFails(
+      updateDoc(doc(db, 'facturas', 'factura-cae'), { total: 5000 })
+    );
+
+    // Cobrar (saldoPendiente + estado) sí está permitido.
+    await assertSucceeds(
+      updateDoc(doc(db, 'facturas', 'factura-cae'), {
+        saldoPendiente: 0,
+        estado: 'pagada',
+      })
+    );
+  });
+
+  test('no se puede crear audit con userId ajeno', async () => {
+    const db = dbFor(roles.vendedor);
+    await assertFails(
+      setDoc(doc(db, 'audit_log', 'audit-falso'), {
+        action: 'orders.create',
+        entity: 'pedidos',
+        userId: roles.admin,
+        createdAt: new Date(),
+      })
+    );
   });
 
   test('lectura general requiere perfil valido', async () => {

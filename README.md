@@ -1,4 +1,4 @@
-# CrowGest - Sistema de Gestión ERP/CRM
+# Gest Crow - Sistema de Gestión ERP/CRM
 
 Un sistema completo de gestión empresarial (ERP/CRM) desarrollado con React, Vite y Tailwind CSS, integrado con Firebase para base de datos y autenticación en tiempo real.
 
@@ -53,6 +53,15 @@ Un sistema completo de gestión empresarial (ERP/CRM) desarrollado con React, Vi
     npm run dev
     ```
     La aplicación estará disponible en `http://localhost:3000` (o el puerto que asigne Vite).
+
+## Acceso demo
+
+Para revisar el proyecto desplegado o en local:
+
+- **Usuario:** `test@gmail.com`
+- **Contraseña:** `1234ab`
+
+El login precarga estas credenciales y el usuario demo tiene rol `admin` para acceder a todas las funciones.
 
 ## ☁️ Despliegue en Vercel
 

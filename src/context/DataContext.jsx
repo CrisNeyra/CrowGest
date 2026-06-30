@@ -1,37 +1,33 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, writeBatch } from 'firebase/firestore';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import {
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  writeBatch,
+  query,
+  orderBy,
+  limit as limitFn,
+} from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from './AuthContext';
 import { assertPermission } from '../utils/permissions';
 import { getActivePermissions } from '../utils/permissionStore';
+import { addMoney, subMoney, mulMoney, sumMoney } from '../utils/money';
+import {
+  EMPTY_DATA,
+  REALTIME_COLLECTIONS,
+  stateKeyFor,
+} from './data/collections';
+import { createAuditHelpers } from './data/audit';
 
 const DataContext = createContext();
 
 export function DataProvider({ children }) {
   const { currentUser } = useAuth();
-  const [data, setData] = useState({
-    clientes: [],
-    productos: [],
-    proveedores: [],
-    ventas: [],
-    facturas: [],
-    pagos: [],
-    movimientos: [],
-    presupuestos: [],
-    pedidos: [],
-    remitos: [],
-    remitosCompra: [],
-    ordenesCompra: [],
-    comprobantesProveedor: [],
-    cuentasTesoreria: [],
-    movimientosTesoreria: [],
-    importacionesBancarias: [],
-    auditLog: [],
-    vendedores: [],
-    condicionesVenta: [],
-    tiposComprobante: [],
-    bonificaciones: [],
-  });
+  const [data, setData] = useState(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
 
   // Cargar datos desde Firestore en tiempo real
@@ -42,87 +38,73 @@ export function DataProvider({ children }) {
     }
 
     setLoading(true);
-    const collections = [
-      'clientes',
-      'productos',
-      'proveedores',
-      'ventas',
-      'facturas',
-      'pagos',
-      'movimientos',
-      'presupuestos',
-      'pedidos',
-      'remitos',
-      'remitos_compra',
-      'ordenes_compra',
-      'comprobantes_proveedor',
-      'cuentas_tesoreria',
-      'movimientos_tesoreria',
-      'importaciones_bancarias',
-      'audit_log',
-      'vendedores',
-      'condiciones_venta',
-      'tipos_comprobante',
-      'bonificaciones',
-    ];
 
-    const collectionKeys = {
-      remitos_compra: 'remitosCompra',
-      ordenes_compra: 'ordenesCompra',
-      comprobantes_proveedor: 'comprobantesProveedor',
-      cuentas_tesoreria: 'cuentasTesoreria',
-      movimientos_tesoreria: 'movimientosTesoreria',
-      importaciones_bancarias: 'importacionesBancarias',
-      audit_log: 'auditLog',
-      condiciones_venta: 'condicionesVenta',
-      tipos_comprobante: 'tiposComprobante',
+    // Esperamos al primer snapshot de cada colección de tiempo real antes de
+    // marcar la carga como terminada (en vez de un setTimeout fijo).
+    const pending = new Set(REALTIME_COLLECTIONS);
+    const settle = (collName) => {
+      if (pending.delete(collName) && pending.size === 0) {
+        setLoading(false);
+      }
     };
 
-    const unsubscribes = collections.map((collName) => {
-      const stateKey = collectionKeys[collName] || collName;
+    const unsubscribes = REALTIME_COLLECTIONS.map((collName) => {
+      const stateKey = stateKeyFor(collName);
       return onSnapshot(
         collection(db, collName),
         (snapshot) => {
           const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
           setData((prev) => ({ ...prev, [stateKey]: items }));
+          settle(collName);
         },
         (error) => {
           console.error(`Error al escuchar la colección ${collName}:`, error);
+          settle(collName);
         }
       );
     });
 
-    // Simulamos que la carga inicial terminó después de 1.5s
-    // (En un escenario real, podríamos esperar a que todos los snapshots emitan su primer valor)
-    const timer = setTimeout(() => setLoading(false), 1500);
+    // Red de seguridad: si algún snapshot nunca emite, no dejamos la UI colgada.
+    const safetyTimer = setTimeout(() => setLoading(false), 8000);
 
     return () => {
-      clearTimeout(timer);
-      unsubscribes.forEach(unsub => unsub());
+      clearTimeout(safetyTimer);
+      unsubscribes.forEach((unsub) => unsub());
     };
   }, [currentUser]);
 
-  const buildAuditLog = ({ action, entity, entityId, entityLabel = '', amount = null, metadata = {} }) => ({
-    action,
-    entity,
-    entityId: entityId || null,
-    entityLabel,
-    amount,
-    metadata,
-    userId: currentUser?.uid || null,
-    userEmail: currentUser?.email || 'Sistema',
-    createdAt: new Date().toISOString(),
-  });
-
-  const auditInBatch = (batch, payload) => {
-    const auditRef = doc(collection(db, 'audit_log'));
-    batch.set(auditRef, buildAuditLog(payload));
-    return auditRef.id;
-  };
+  const { buildAuditLog, auditInBatch } = createAuditHelpers(currentUser);
 
   const registrarAuditoria = async (payload) => {
     await addDoc(collection(db, 'audit_log'), buildAuditLog(payload));
   };
+
+  /**
+   * Suscripción bajo demanda para colecciones grandes (movimientos, audit_log).
+   * La página la invoca en un useEffect; devuelve la función de limpieza.
+   * Aplica orderBy createdAt/fecha desc + limit para no traer toda la colección.
+   */
+  const subscribeOnDemand = useCallback((collName, { max = 300 } = {}) => {
+    if (!currentUser) return undefined;
+    const stateKey = stateKeyFor(collName);
+    const campoFecha = collName === 'audit_log' ? 'createdAt' : 'fecha';
+    let q;
+    try {
+      q = query(collection(db, collName), orderBy(campoFecha, 'desc'), limitFn(max));
+    } catch {
+      q = collection(db, collName);
+    }
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setData((prev) => ({ ...prev, [stateKey]: items }));
+      },
+      (error) => {
+        console.error(`Error al cargar ${collName} bajo demanda:`, error);
+      }
+    );
+  }, [currentUser]);
 
   // ================= CLIENTES =================
   const addCliente = async (cliente) => {
@@ -671,7 +653,7 @@ export function DataProvider({ children }) {
     const cliente = data.clientes.find((c) => c.id === clienteId);
     if (!cliente) return;
     const saldoActual = cliente.saldo || 0;
-    const nuevoSaldo = operacion === 'sumar' ? saldoActual + monto : saldoActual - monto;
+    const nuevoSaldo = operacion === 'sumar' ? addMoney(saldoActual, monto) : subMoney(saldoActual, monto);
     batch.update(doc(db, 'clientes', clienteId), { saldo: nuevoSaldo });
   };
 
@@ -887,7 +869,7 @@ export function DataProvider({ children }) {
         });
       }
 
-      montoRecibido += linea.cantidad * (item.precioUnitario || 0);
+      montoRecibido = addMoney(montoRecibido, mulMoney(item.precioUnitario || 0, linea.cantidad));
       itemsRecibidos.push({
         productoId: item.productoId,
         nombre: item.nombre,
@@ -966,7 +948,7 @@ export function DataProvider({ children }) {
     });
 
     batch.update(doc(db, 'proveedores', proveedor.id), {
-      saldoPendiente: (proveedor.saldoPendiente || 0) + montoRecibido,
+      saldoPendiente: addMoney(proveedor.saldoPendiente || 0, montoRecibido),
     });
 
     const movRef = doc(collection(db, 'movimientos'));
@@ -1100,7 +1082,7 @@ export function DataProvider({ children }) {
 
     if (proveedor) {
       batch.update(doc(db, 'proveedores', proveedor.id), {
-        saldoPendiente: Math.max(0, (Number(proveedor.saldoPendiente) || 0) - total),
+        saldoPendiente: Math.max(0, subMoney(Number(proveedor.saldoPendiente) || 0, total)),
       });
     }
 
@@ -1163,7 +1145,7 @@ export function DataProvider({ children }) {
           ? [{ comprobanteProveedorId: comprobante.comprobanteOrigenId, monto: total }]
           : [];
 
-      const totalImputado = imputacionesSolicitadas.reduce((acc, imp) => acc + imp.monto, 0);
+      const totalImputado = sumMoney(imputacionesSolicitadas.map((imp) => imp.monto));
       if (Math.abs(totalImputado - total) > 0.01) {
         throw new Error('La suma de imputaciones debe coincidir con el total de la nota de crédito');
       }
@@ -1215,7 +1197,7 @@ export function DataProvider({ children }) {
     batch.update(doc(db, 'proveedores', proveedor.id), {
       saldoPendiente: Math.max(
         0,
-        (Number(proveedor.saldoPendiente) || 0) + (esNotaCredito ? -total : total)
+        addMoney(Number(proveedor.saldoPendiente) || 0, esNotaCredito ? -total : total)
       ),
     });
 
@@ -1324,7 +1306,7 @@ export function DataProvider({ children }) {
       batch.update(doc(db, 'proveedores', proveedor.id), {
         saldoPendiente: Math.max(
           0,
-          (Number(proveedor.saldoPendiente) || 0) + (esNotaCredito ? total : -saldo)
+          addMoney(Number(proveedor.saldoPendiente) || 0, esNotaCredito ? total : -saldo)
         ),
       });
     }
@@ -1408,6 +1390,124 @@ export function DataProvider({ children }) {
       facturaId: facturaRef.id,
       facturaNumero: numeroFactura,
       fechaFacturacion: fecha,
+    });
+
+    await batch.commit();
+    return { facturaId: facturaRef.id, numero: numeroFactura };
+  };
+
+  const crearFacturaDesdeFormulario = async (payload) => {
+    assertPermission(getActivePermissions(), 'orders:invoice');
+
+    const pedido = payload.pedidoId
+      ? data.pedidos.find((p) => p.id === payload.pedidoId)
+      : null;
+
+    if (payload.pedidoId) {
+      if (!pedido || pedido.estado !== 'authorized') {
+        throw new Error('Solo se pueden facturar pedidos autorizados');
+      }
+      const yaFacturado = data.facturas.some((f) => f.pedidoId === payload.pedidoId);
+      if (yaFacturado) {
+        throw new Error('Este pedido ya tiene factura asociada');
+      }
+    }
+
+    if (!payload.clienteId) {
+      throw new Error('Debe seleccionar un cliente');
+    }
+    if (!payload.lineas?.length) {
+      throw new Error('La factura debe tener al menos un ítem');
+    }
+
+    const batch = writeBatch(db);
+    const facturaRef = doc(collection(db, 'facturas'));
+    const numeroFactura = `F-${String(data.facturas.length + 1).padStart(6, '0')}`;
+    const fecha = new Date().toISOString();
+
+    const items = payload.lineas.map((linea) => ({
+      productoId: linea.productoId || null,
+      codigo: linea.codigo || '',
+      nombre: linea.descripcion || linea.nombre || '',
+      cantidad: linea.cantidad,
+      precioUnitario: linea.precioUnitario ?? linea.netoUnitario,
+      subtotal: linea.subtotal ?? linea.neto,
+      alicuotaIva: linea.alicuotaIva,
+      descuentoPct: linea.descuentoPct || 0,
+      iva: linea.iva || 0,
+      totalLinea: linea.totalLinea || linea.subtotalLegacy || 0,
+    }));
+
+    const remitoId = payload.remitoId || pedido?.remitoId || null;
+    const remito = remitoId ? data.remitos.find((r) => r.id === remitoId) : null;
+
+    const newFactura = {
+      pedidoId: payload.pedidoId || null,
+      pedidoNumero: pedido?.numero || payload.pedidoNumero || null,
+      presupuestoId: pedido?.presupuestoId || payload.presupuestoId || null,
+      presupuestoNumero: pedido?.presupuestoNumero || payload.presupuestoNumero || null,
+      remitoId,
+      remitoNumero: remito?.numero || payload.remitoNumero || pedido?.remitoNumero || null,
+      clienteId: payload.clienteId,
+      vendedorId: pedido?.vendedorId || payload.vendedorId || null,
+      vendedorNombre: pedido?.vendedorNombre || payload.vendedorNombre || null,
+      condicionVentaId: pedido?.condicionVentaId || payload.condicionVentaId || null,
+      condicionVentaNombre: pedido?.condicionVentaNombre || payload.condicionVentaNombre || null,
+      condicionVentaDiasPago: pedido?.condicionVentaDiasPago ?? payload.condicionVentaDiasPago ?? 0,
+      tipoComprobante: payload.tipoComprobante || 'FB',
+      tipoComprobanteNombre: payload.tipoComprobanteNombre || null,
+      letra: payload.letra || 'B',
+      sucursal: payload.sucursal || 'Central',
+      formaPago: payload.formaPago || 'contado',
+      transporte: payload.transporte || '',
+      bonificacionId: pedido?.bonificacionId || null,
+      bonificacionNombre: pedido?.bonificacionNombre || null,
+      bonificacionTipo: pedido?.bonificacionTipo || null,
+      bonificacionValor: pedido?.bonificacionValor || 0,
+      items,
+      lineasDetalle: payload.lineas,
+      subtotalBruto: payload.netoGravado ?? payload.total,
+      netoGravado: payload.netoGravado || 0,
+      iva105: payload.iva105 || 0,
+      iva21: payload.iva21 || 0,
+      iibb: payload.iibb || 0,
+      iibbPct: payload.iibbPct || 0,
+      descuentoGlobal: payload.descuentoGlobal || 0,
+      descuentoGlobalPct: payload.descuentoGlobalPct || 0,
+      descuentoCondicion: pedido?.descuentoCondicion || 0,
+      recargoCondicion: pedido?.recargoCondicion || 0,
+      descuentoBonificacion: pedido?.descuentoBonificacion || 0,
+      total: payload.total,
+      observaciones: payload.observaciones || '',
+      numero: numeroFactura,
+      fecha,
+      estado: 'pendiente',
+      saldoPendiente: payload.total,
+    };
+
+    batch.set(facturaRef, newFactura);
+
+    if (remitoId) {
+      const facturaIds = [...new Set([...(remito?.facturaIds || []), facturaRef.id])];
+      batch.update(doc(db, 'remitos', remitoId), { facturaIds });
+    }
+
+    if (payload.pedidoId) {
+      batch.update(doc(db, 'pedidos', payload.pedidoId), {
+        estado: 'invoiced',
+        facturaId: facturaRef.id,
+        facturaNumero: numeroFactura,
+        fechaFacturacion: fecha,
+      });
+    }
+
+    auditInBatch(batch, {
+      action: 'invoice.create',
+      entity: 'facturas',
+      entityId: facturaRef.id,
+      entityLabel: numeroFactura,
+      amount: payload.total || 0,
+      metadata: { clienteId: payload.clienteId, pedidoId: payload.pedidoId || null },
     });
 
     await batch.commit();
@@ -1658,7 +1758,7 @@ export function DataProvider({ children }) {
       const facturaRef = doc(db, 'facturas', pago.facturaId);
       const factura = data.facturas.find(f => f.id === pago.facturaId);
       if (factura) {
-        const nuevoSaldo = factura.saldoPendiente - pago.monto;
+        const nuevoSaldo = subMoney(factura.saldoPendiente, pago.monto);
         batch.update(facturaRef, {
           saldoPendiente: nuevoSaldo,
           estado: nuevoSaldo <= 0 ? 'pagada' : 'parcial'
@@ -1735,7 +1835,7 @@ export function DataProvider({ children }) {
 
         aplicaciones.forEach(({ comprobante, aplicado }) => {
           const saldo = comprobante.saldoPendiente || 0;
-          const nuevoSaldo = saldo - aplicado;
+          const nuevoSaldo = subMoney(saldo, aplicado);
           const imputacion = {
             comprobanteProveedorId: comprobante.id,
             numeroComprobante: comprobante.numero,
@@ -1758,7 +1858,7 @@ export function DataProvider({ children }) {
         });
 
         batch.update(proveedorRef, {
-          saldoPendiente: Math.max(0, (proveedor.saldoPendiente || 0) - pago.monto)
+          saldoPendiente: Math.max(0, subMoney(proveedor.saldoPendiente || 0, pago.monto))
         });
       }
     }
@@ -1895,7 +1995,7 @@ export function DataProvider({ children }) {
 
       if (proveedor) {
         batch.update(doc(db, 'proveedores', proveedor.id), {
-          saldoPendiente: (Number(proveedor.saldoPendiente) || 0) + monto,
+          saldoPendiente: addMoney(Number(proveedor.saldoPendiente) || 0, monto),
         });
       }
     }
@@ -2285,6 +2385,7 @@ export function DataProvider({ children }) {
   const value = {
     ...data,
     loading,
+    subscribeOnDemand,
     registrarAuditoria,
     addCliente,
     updateCliente,
@@ -2331,6 +2432,7 @@ export function DataProvider({ children }) {
     desvincularFacturaDeRemito,
     addFactura,
     facturarPedido,
+    crearFacturaDesdeFormulario,
     updateFactura,
     emitirComprobanteFiscal,
     crearNotaCreditoFiscal,

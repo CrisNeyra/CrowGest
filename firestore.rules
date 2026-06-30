@@ -30,6 +30,28 @@ service cloud.firestore {
       return hasProfile();
     }
 
+    // Una factura con CAE es inmutable en sus campos fiscales.
+    // Se permiten cambios de cobro (saldoPendiente, estado) pero nunca
+    // alterar cae, numeroFiscal, total, letra ni puntoVenta.
+    function fiscalFieldsUnchanged() {
+      return request.resource.data.cae == resource.data.cae &&
+        request.resource.data.numeroFiscal == resource.data.numeroFiscal &&
+        request.resource.data.total == resource.data.total &&
+        request.resource.data.letra == resource.data.letra &&
+        request.resource.data.puntoVenta == resource.data.puntoVenta;
+    }
+
+    function facturaUpdatePermitida() {
+      return resource.data.cae == null || fiscalFieldsUnchanged();
+    }
+
+    // Un registro de auditoría debe tener los campos mínimos y el userId
+    // debe coincidir con el usuario autenticado (no se puede falsear).
+    function auditPayloadValido() {
+      return request.resource.data.keys().hasAll(['action', 'entity', 'userId', 'createdAt']) &&
+        request.resource.data.userId == request.auth.uid;
+    }
+
     match /usuarios/{userId} {
       allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin();
@@ -107,7 +129,9 @@ service cloud.firestore {
 
     match /facturas/{documentId} {
       allow read: if canReadBusiness();
-      allow write: if hasRole(['admin', 'supervisor', 'tesoreria']);
+      allow create: if hasRole(['admin', 'supervisor', 'tesoreria']);
+      allow update: if hasRole(['admin', 'supervisor', 'tesoreria']) && facturaUpdatePermitida();
+      allow delete: if hasRole(['admin', 'supervisor']) && resource.data.cae == null;
     }
 
     match /ordenes_compra/{documentId} {
@@ -147,7 +171,7 @@ service cloud.firestore {
 
     match /audit_log/{documentId} {
       allow read: if canReadBusiness();
-      allow create: if hasProfile();
+      allow create: if hasProfile() && auditPayloadValido();
       allow update, delete: if false;
     }
 

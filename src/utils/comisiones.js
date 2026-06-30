@@ -1,3 +1,5 @@
+import { addMoney, sumMoney, pctOf } from './money';
+
 export const COMISION_MODOS = [
   { value: 'facturado', label: 'Por ventas facturadas' },
   { value: 'cobrado', label: 'Por cobranzas' },
@@ -87,13 +89,14 @@ export function calcularComisionesPorVendedor({
 
   facturasComisionables.forEach((factura) => {
     const row = ensure(factura.vendedorId, factura.vendedorNombre);
-    row.baseFacturada += factura.total || 0;
+    row.baseFacturada = addMoney(row.baseFacturada, factura.total || 0);
     if (modo === 'producto') {
-      const totalProductos = factura.items?.reduce(
-        (acc, item) => acc + (item.subtotal || (item.precioUnitario || item.precio || 0) * (item.cantidad || 0)),
-        0
-      ) || 0;
-      row.baseProductos += totalProductos;
+      const totalProductos = sumMoney(
+        (factura.items || []).map(
+          (item) => item.subtotal || (item.precioUnitario || item.precio || 0) * (item.cantidad || 0)
+        )
+      );
+      row.baseProductos = addMoney(row.baseProductos, totalProductos);
       row.operaciones += factura.items?.length || 0;
     } else {
       row.operaciones += 1;
@@ -103,38 +106,29 @@ export function calcularComisionesPorVendedor({
   getPagosClienteComisionables({ pagos, facturas, movimientosTesoreria, desde, hasta, modo })
     .forEach(({ pago, factura, acreditado }) => {
       const row = ensure(factura.vendedorId, factura.vendedorNombre);
-      row.baseCobrada += pago.monto || 0;
-      if (acreditado) row.baseAcreditada += pago.monto || 0;
-      else row.baseSinAcreditar += pago.monto || 0;
+      row.baseCobrada = addMoney(row.baseCobrada, pago.monto || 0);
+      if (acreditado) row.baseAcreditada = addMoney(row.baseAcreditada, pago.monto || 0);
+      else row.baseSinAcreditar = addMoney(row.baseSinAcreditar, pago.monto || 0);
     });
+
+  const baseSegunModo = (row) => {
+    if (modo === 'cobrado') return row.baseCobrada;
+    if (modo === 'acreditado') return row.baseAcreditada;
+    if (modo === 'sin_acreditar') return row.baseSinAcreditar;
+    if (modo === 'producto') return row.baseProductos;
+    return row.baseFacturada;
+  };
 
   return Object.values(grouped)
     .map((row) => {
-      const porcentaje = row.comisionPorcentaje / 100;
+      const pct = row.comisionPorcentaje;
+      const baseCalculo = baseSegunModo(row);
       return {
         ...row,
-        baseCalculo:
-          modo === 'cobrado'
-            ? row.baseCobrada
-            : modo === 'acreditado'
-              ? row.baseAcreditada
-              : modo === 'sin_acreditar'
-                ? row.baseSinAcreditar
-                : modo === 'producto'
-                  ? row.baseProductos
-                  : row.baseFacturada,
-        comisionFacturada: row.baseFacturada * porcentaje,
-        comisionCobrada: row.baseCobrada * porcentaje,
-        comision:
-          (modo === 'cobrado'
-            ? row.baseCobrada
-            : modo === 'acreditado'
-              ? row.baseAcreditada
-              : modo === 'sin_acreditar'
-                ? row.baseSinAcreditar
-                : modo === 'producto'
-                  ? row.baseProductos
-                  : row.baseFacturada) * porcentaje,
+        baseCalculo,
+        comisionFacturada: pctOf(row.baseFacturada, pct),
+        comisionCobrada: pctOf(row.baseCobrada, pct),
+        comision: pctOf(baseCalculo, pct),
       };
     })
     .sort((a, b) => b.comision - a.comision);

@@ -5,6 +5,8 @@ import { DataProvider, useData } from './context/DataContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PermissionsProvider, usePermissions } from './context/PermissionsContext';
+import { ConfirmProvider } from './components/ui/ConfirmDialog';
+import ErrorBoundary from './components/ui/ErrorBoundary';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Clientes = lazy(() => import('./pages/Clientes'));
@@ -16,8 +18,6 @@ const Presupuestos = lazy(() => import('./pages/Presupuestos'));
 const Pedidos = lazy(() => import('./pages/Pedidos'));
 const PedidosAFacturar = lazy(() => import('./pages/PedidosAFacturar'));
 const Remitos = lazy(() => import('./pages/Remitos'));
-const Comprobantes = lazy(() => import('./pages/Comprobantes'));
-const Facturas = lazy(() => import('./pages/Facturas'));
 const Proveedores = lazy(() => import('./pages/Proveedores'));
 const Pagos = lazy(() => import('./pages/Pagos'));
 const OrdenesCompra = lazy(() => import('./pages/OrdenesCompra'));
@@ -76,7 +76,8 @@ function AppRoutes() {
   }
 
   return (
-    <Suspense fallback={<AppLoader />}>
+    <ErrorBoundary>
+      <Suspense fallback={<AppLoader />}>
       <Routes>
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       
@@ -90,8 +91,8 @@ function AppRoutes() {
       <Route path="/pedidos" element={<PrivateRoute><Pedidos /></PrivateRoute>} />
       <Route path="/pedidos-a-facturar" element={<PrivateRoute><PedidosAFacturar /></PrivateRoute>} />
       <Route path="/remitos" element={<PrivateRoute><Remitos /></PrivateRoute>} />
-      <Route path="/comprobantes" element={<PrivateRoute><Comprobantes /></PrivateRoute>} />
-      <Route path="/facturas" element={<PrivateRoute><Facturas /></PrivateRoute>} />
+      <Route path="/comprobantes" element={<Navigate to="/pedidos-a-facturar?tab=fiscal" replace />} />
+      <Route path="/facturas" element={<Navigate to="/pedidos-a-facturar?tab=historial" replace />} />
       <Route path="/proveedores" element={<PrivateRoute><Proveedores /></PrivateRoute>} />
       <Route path="/ordenes-compra" element={<PrivateRoute><OrdenesCompra /></PrivateRoute>} />
       <Route path="/remitos-compra" element={<PrivateRoute><RemitosCompra /></PrivateRoute>} />
@@ -106,7 +107,8 @@ function AppRoutes() {
       <Route path="/auditoria" element={<PrivateRoute><Auditoria /></PrivateRoute>} />
         <Route path="/configuracion" element={<PrivateRoute><Configuracion /></PrivateRoute>} />
       </Routes>
-    </Suspense>
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 
@@ -122,10 +124,12 @@ function AppDataShell() {
 
   return (
     <DataProvider>
-      <BrowserRouter>
-        <Toaster position="top-right" richColors />
-        <AppRoutes />
-      </BrowserRouter>
+      <ConfirmProvider>
+        <BrowserRouter>
+          <Toaster position="top-right" richColors />
+          <AppRoutes />
+        </BrowserRouter>
+      </ConfirmProvider>
     </DataProvider>
   );
 }

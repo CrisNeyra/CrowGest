@@ -27,6 +27,12 @@ dev = [
     "mypy>=1.13.0",
     "types-requests>=2.32.0",
 ]
+# Integración fiscal real con ARCA (WSAA + WSFEv1). Opcional: solo se
+# necesita cuando AFIP_MODE es homologacion o production.
+afip = [
+    "zeep>=4.3.1",
+    "cryptography>=44.0.0",
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -14,6 +14,7 @@ import {
   ROLES,
 } from '../utils/permissions';
 import { clearActivePermissions, setActivePermissions } from '../utils/permissionStore';
+import { DEMO_ACCESS, isDemoUser } from '../config/demoAccess';
 
 const PermissionsContext = createContext();
 
@@ -40,7 +41,7 @@ export function PermissionsProvider({ children }) {
       userRef,
       async (snap) => {
         if (!snap.exists()) {
-          const rol = 'vendedor';
+          const rol = isDemoUser(currentUser.email) ? DEMO_ACCESS.role : 'vendedor';
           const nuevo = {
             email: currentUser.email || '',
             nombre: currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuario',
@@ -54,8 +55,15 @@ export function PermissionsProvider({ children }) {
           setActivePermissions(perms);
         } else {
           const data = snap.data();
-          const rol = data.rol || 'vendedor';
-          setProfile({ id: currentUser.uid, ...data });
+          let rol = data.rol || 'vendedor';
+          if (isDemoUser(currentUser.email) && rol !== DEMO_ACCESS.role) {
+            rol = DEMO_ACCESS.role;
+            await updateDoc(userRef, {
+              rol,
+              updatedAt: new Date().toISOString(),
+            });
+          }
+          setProfile({ id: currentUser.uid, ...data, rol });
           const perms = getPermissionsForRole(rol);
           setPermissions(perms);
           setActivePermissions(perms);

@@ -48,13 +48,31 @@ class Settings(BaseSettings):
         description="Si es True, get_current_user devuelve un usuario stub (solo dev/test).",
     )
 
-    afip_mode: Literal["simulated", "production"] = Field(
+    afip_mode: Literal["simulated", "homologacion", "production"] = Field(
         default="simulated",
-        description="simulated genera CAE de prueba; production requiere certificados ARCA.",
+        description=(
+            "simulated genera CAE de prueba; homologacion usa WSAA/WSFE de testing de ARCA; "
+            "production usa los servicios productivos (requiere certificados)."
+        ),
     )
     afip_cuit: str | None = Field(default=None, description="CUIT del emisor para WSFE.")
     afip_punto_venta_default: int = Field(default=1, ge=1)
     afip_cae_dias_validez: int = Field(default=10, ge=1, le=30)
+
+    # Certificado digital ARCA (X.509) y clave privada para firmar el TRA de WSAA.
+    afip_cert_path: str | None = Field(
+        default=None, description="Ruta al certificado .crt/.pem emitido por ARCA."
+    )
+    afip_key_path: str | None = Field(
+        default=None, description="Ruta a la clave privada .key/.pem del certificado."
+    )
+    # URLs de WSAA / WSFEv1. Por defecto apuntan a homologacion.
+    afip_wsaa_url: str = Field(
+        default="https://wsaahomo.afip.gov.ar/ws/services/LoginCms?wsdl"
+    )
+    afip_wsfe_url: str = Field(
+        default="https://wswhomo.afip.gov.ar/wsfev1/service.asmx?WSDL"
+    )
 
 
 @lru_cache(maxsize=1)

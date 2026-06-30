@@ -1,13 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, ArrowLeftRight, TrendingUp, TrendingDown, Filter, FileText, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
+import { loadExportTools } from '../utils/exportTools';
 
 const TIPO_STYLES = {
   venta: {
@@ -80,9 +78,14 @@ const defaultStyle = {
 };
 
 export default function Movimientos() {
-  const { movimientos } = useData();
+  const { movimientos, subscribeOnDemand } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('');
+
+  useEffect(() => {
+    const unsub = subscribeOnDemand('movimientos', { max: 500 });
+    return () => unsub && unsub();
+  }, [subscribeOnDemand]);
 
   const filteredMovimientos = movimientos.filter(mov => {
     const matchSearch = mov.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
@@ -100,9 +103,10 @@ export default function Movimientos() {
     .filter(m => m.tipo === 'pago_proveedor')
     .reduce((total, m) => total + m.monto, 0);
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
+    const { jsPDF } = await loadExportTools();
     const doc = new jsPDF();
-    doc.text('Reporte de Movimientos - CrowGest', 14, 15);
+    doc.text('Reporte de Movimientos - Gest Crow', 14, 15);
     const tableData = filteredMovimientos.map(mov => {
       const esIngreso = mov.tipo === 'venta' || mov.tipo === 'cobro';
       return [
@@ -121,7 +125,8 @@ export default function Movimientos() {
     toast.success('PDF exportado correctamente');
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
+    const { XLSX } = await loadExportTools();
     const dataToExport = filteredMovimientos.map(mov => {
       const esIngreso = mov.tipo === 'venta' || mov.tipo === 'cobro';
       return {

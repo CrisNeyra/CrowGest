@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, Filter, Search, ShieldCheck, User } from 'lucide-react';
 import Layout from '../components/layout/Layout';
@@ -54,11 +54,16 @@ const inDateRange = (fecha, desde, hasta) => {
 };
 
 export default function Auditoria() {
-  const { auditLog } = useData();
+  const { auditLog, subscribeOnDemand } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+
+  useEffect(() => {
+    const unsub = subscribeOnDemand('audit_log', { max: 500 });
+    return () => unsub && unsub();
+  }, [subscribeOnDemand]);
 
   const rows = useMemo(() => {
     const term = searchTerm.toLowerCase();

@@ -1,16 +1,20 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Save, RefreshCw, Database, Palette, Bell, Shield, UploadCloud } from 'lucide-react';
+import { Save, RefreshCw, Database, Palette, Bell, Shield, UploadCloud, Car } from 'lucide-react';
 import { toast } from 'sonner';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
 import { usePermissions } from '../context/PermissionsContext';
+import { useConfirm } from '../components/ui/ConfirmDialog';
+import { cargarDemoRepuestos } from '../utils/seedDemoRepuestos';
 
 export default function Configuracion() {
   const { migrateToFirebase } = useData();
-  const { profile, usuarios, can, updateUserRole, roles, loading: permsLoading } = usePermissions();
+  const { profile, usuarios, can, isAdmin, updateUserRole, roles, loading: permsLoading } = usePermissions();
+  const confirm = useConfirm();
   const [isMigrating, setIsMigrating] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
   const [settings, setSettings] = useState({
     nombreEmpresa: 'Mi Empresa',
     moneda: 'ARS',
@@ -25,8 +29,14 @@ export default function Configuracion() {
     toast.success('Configuración guardada correctamente');
   };
 
-  const handleResetData = () => {
-    if (confirm('¿Estás seguro de que deseas eliminar todos los datos? Esta acción no se puede deshacer.')) {
+  const handleResetData = async () => {
+    const ok = await confirm({
+      title: 'Eliminar datos locales',
+      message: '¿Seguro? Esta acción no se puede deshacer.',
+      danger: true,
+      confirmLabel: 'Eliminar',
+    });
+    if (ok) {
       localStorage.removeItem('crowgest_data');
       window.location.reload();
     }
@@ -184,7 +194,7 @@ export default function Configuracion() {
                     </p>
                     <button
                       onClick={async () => {
-                        if (confirm('¿Migrar los datos locales a Firebase?')) {
+                        if (await confirm('¿Migrar los datos locales a Firebase?')) {
                           setIsMigrating(true);
                           try {
                             await migrateToFirebase();
@@ -208,6 +218,50 @@ export default function Configuracion() {
               </div>
             </div>
           </motion.div>
+
+          {isAdmin && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.22 }}
+              className="rounded-2xl border border-edge-light bg-white/70 p-6 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900"
+            >
+              <div className="mb-4 flex items-center gap-3">
+                <div className="rounded-lg bg-emerald-100 p-2 dark:bg-emerald-500/20">
+                  <Car size={20} className="text-emerald-700 dark:text-emerald-300" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-pastel-ink dark:text-slate-100">
+                    Datos demo — Repuestos automotrices
+                  </h3>
+                  <p className="text-sm text-pastel-muted dark:text-slate-400">
+                    5 clientes (Gol 2015, Classic, Sandero), productos, pedidos y 2 deudas próximas a vencer.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!(await confirm('¿Cargar datos demo de repuestos? Solo se ejecuta una vez.'))) return;
+                  setIsSeeding(true);
+                  try {
+                    const result = await cargarDemoRepuestos();
+                    toast.success(`Demo cargado: ${result.clientes} clientes, ${result.productos} productos`);
+                  } catch (error) {
+                    console.error(error);
+                    toast.error(error.message || 'No se pudo cargar el demo');
+                  } finally {
+                    setIsSeeding(false);
+                  }
+                }}
+                disabled={isSeeding}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
+              >
+                <Database size={16} />
+                {isSeeding ? 'Cargando demo...' : 'Cargar datos demo repuestos'}
+              </button>
+            </motion.div>
+          )}
 
           {can('users:manage') && (
             <motion.div

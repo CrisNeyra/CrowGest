@@ -34,18 +34,47 @@ class AfipEmissionResult:
 
 
 class AfipService:
-    """Emision fiscal. Modo simulado para desarrollo; ARCA WSFE pendiente."""
+    """Emisión fiscal. Modo simulado para desarrollo; WSAA/WSFEv1 para ARCA.
 
-    def __init__(self, settings: Settings | None = None) -> None:
+    El cliente WSFE se puede inyectar (para tests) o se construye perezosamente
+    a partir de la configuración cuando el modo es homologacion/production.
+    """
+
+    def __init__(self, settings: Settings | None = None, wsfe_client=None) -> None:
         self._settings = settings or get_settings()
+        self._wsfe_client = wsfe_client
 
     def emitir(self, request: AfipEmissionRequest) -> AfipEmissionResult:
         if self._settings.afip_mode == "simulated":
             return self._emitir_simulado(request)
-        if self._settings.afip_mode == "production":
-            return self._emitir_produccion(request)
+        if self._settings.afip_mode in ("homologacion", "production"):
+            return self._emitir_wsfe(request)
         msg = f"Modo AFIP no soportado: {self._settings.afip_mode}"
         raise bad_request(msg, "AFIP_MODE_INVALID")
+
+    def _get_wsfe_client(self):
+        if self._wsfe_client is not None:
+            return self._wsfe_client
+        from app.modules.ventas.afip_wsfe import WsfeClient
+
+        self._wsfe_client = WsfeClient(self._settings)
+        return self._wsfe_client
+
+    def _emitir_wsfe(self, request: AfipEmissionRequest) -> AfipEmissionResult:
+        client = self._get_wsfe_client()
+        result = client.solicitar_cae(
+            tipo_comprobante=request.tipo_comprobante,
+            letra=request.letra,
+            punto_venta=request.punto_venta,
+            total=request.total,
+            numero_fiscal=request.numero_fiscal,
+        )
+        return AfipEmissionResult(
+            cae=result.cae,
+            cae_vencimiento=result.cae_vencimiento,
+            numero_fiscal=str(result.numero_fiscal).zfill(8),
+            modo=self._settings.afip_mode,
+        )
 
     def _emitir_simulado(self, request: AfipEmissionRequest) -> AfipEmissionResult:
         if request.cae_manual:
@@ -68,12 +97,3 @@ class AfipService:
             modo="simulated",
         )
 
-    def _emitir_produccion(self, request: AfipEmissionRequest) -> AfipEmissionResult:
-        """Integracion WSFE/ARCA — implementar con certificado y pyafipws o httpx."""
-
-        _ = request
-        msg = (
-            "Modo production AFIP no configurado. "
-            "Configure certificados ARCA y AFIP_CUIT en el servidor."
-        )
-        raise bad_request(msg, "AFIP_PRODUCTION_NOT_CONFIGURED")

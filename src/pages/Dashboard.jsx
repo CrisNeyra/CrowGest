@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, ChevronDown, ChevronUp, Package, ShoppingCart, Users, Wallet } from 'lucide-react';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
@@ -34,10 +34,15 @@ const formatCurrency = (value) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
 
 export default function Dashboard() {
-  const { ventas, facturas, clientes, productos, movimientos, getEstadisticas } = useData();
+  const { ventas, facturas, clientes, productos, movimientos, getEstadisticas, subscribeOnDemand } = useData();
   const [period, setPeriod] = useState(6);
   const [expandedPanels, setExpandedPanels] = useState({});
   const { theme, isDark } = useTheme();
+
+  useEffect(() => {
+    const unsub = subscribeOnDemand('movimientos', { max: 500 });
+    return () => unsub && unsub();
+  }, [subscribeOnDemand]);
 
   const stats = getEstadisticas();
 
@@ -268,7 +273,7 @@ export default function Dashboard() {
           >
             <div className="mb-4 flex items-center justify-between">
               <h3 className={`text-base font-semibold ${isDark ? 'text-slate-100' : 'text-pastel-ink'}`}>Facturas Pendientes</h3>
-              <a href="/facturas" className="text-sm font-medium text-sky-700 transition hover:text-sky-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+              <a href="/pedidos-a-facturar?tab=historial" className="text-sm font-medium text-sky-700 transition hover:text-sky-900 dark:text-indigo-400 dark:hover:text-indigo-300">
                 Ver todas
               </a>
             </div>

@@ -15,9 +15,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+import { loadExportTools } from '../utils/exportTools';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import { useData } from '../context/DataContext';
@@ -150,7 +148,8 @@ export default function CuentaCorriente() {
     }
   };
 
-  const exportResumenExcel = () => {
+  const exportResumenExcel = async () => {
+    const { XLSX } = await loadExportTools();
     const rows = filteredResumen.map((r) => ({
       Cliente: r.nombre,
       'Saldo Cta Cte': r.saldo,
@@ -166,7 +165,8 @@ export default function CuentaCorriente() {
     toast.success('Excel exportado');
   };
 
-  const exportResumenPDF = () => {
+  const exportResumenPDF = async () => {
+    const { jsPDF } = await loadExportTools();
     const doc = new jsPDF();
     doc.text('Cuenta Corriente — Saldos', 14, 15);
     doc.autoTable({
@@ -247,8 +247,8 @@ export default function CuentaCorriente() {
               {totales.sinEmitirFiscal}
             </p>
             <p className="mt-1 text-xs text-pastel-muted dark:text-slate-500">
-              <Link to="/comprobantes" className="text-sky-700 hover:underline dark:text-indigo-400">
-                Ir a comprobantes →
+              <Link to="/pedidos-a-facturar?tab=fiscal" className="text-sky-700 hover:underline dark:text-indigo-400">
+                Ir a facturación fiscal →
               </Link>
             </p>
           </motion.div>
@@ -447,7 +447,7 @@ export default function CuentaCorriente() {
                               Cobrar
                             </button>
                           ) : (
-                            <Link to="/comprobantes" className="text-sm text-sky-700 dark:text-indigo-400">
+                            <Link to="/pedidos-a-facturar?tab=fiscal" className="text-sm text-sky-700 dark:text-indigo-400">
                               Emitir CAE
                             </Link>
                           )}

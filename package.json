@@ -7,8 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "lint": "eslint \"src/**/*.{js,jsx}\"",
+    "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:rules": "firebase emulators:exec --project demo-crowgest --only firestore \"node --test tests/firestore-rules.test.mjs\"",
-    "verify:prod": "npm run build && npm run test:rules",
+    "verify:prod": "npm run lint && npm run test && npm run build && npm run test:rules",
     "deploy:rules": "firebase deploy --only firestore:rules"
   },
   "dependencies": {
@@ -28,11 +32,21 @@
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.1",
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/react": "^14.2.0",
     "@vitejs/plugin-react": "^4.2.0",
     "autoprefixer": "^10.4.16",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
     "firebase-tools": "^15.18.0",
+    "jsdom": "^24.0.0",
     "postcss": "^8.4.31",
+    "prettier": "^3.2.5",
     "tailwindcss": "^3.3.5",
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "vitest": "^1.6.0"
   }
 }
